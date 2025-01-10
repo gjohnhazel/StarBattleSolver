@@ -541,8 +541,10 @@ const findSixCellRectangles = (cells: number[][], regions: number[][]): Deductio
                 // Determine the center cell(s)
                 if (maxRow - minRow === 2) {
                     validCenterCells.push({ row: minRow + 1, col: minCol });
+                    validCenterCells.push({ row: minRow + 1, col: minCol + 1 });
                 } else {
                     validCenterCells.push({ row: minRow, col: minCol + 1 });
+                    validCenterCells.push({ row: minRow + 1, col: minCol + 1});
                 }
 
                 deductions.push({
@@ -550,7 +552,12 @@ const findSixCellRectangles = (cells: number[][], regions: number[][]): Deductio
                     description: '6-cell rectangle region center cells must be empty',
                     explanation: 'In a 6-cell rectangle region, the center cells cannot contain stars since this would prevent placing two stars in the region (stars cannot be adjacent). The remaining positions would not allow two stars to be placed.',
                     affected: validCenterCells,
-                    apply: () => {},
+                    apply: () => {
+                        const { toggleCell } = useGameState.getState();
+                        validCenterCells.forEach(pos => {
+                            toggleCell(pos.row, pos.col, 'empty');
+                        });
+                    },
                     certainty: 'definite'
                 });
             }
