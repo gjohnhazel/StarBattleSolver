@@ -39,32 +39,44 @@ const getRelatedCells = (pos: Position, regions: number[][]): Position[] => {
 
 const findSandwichPatterns = (cells: number[][], regions: number[][]): Deduction[] => {
   const deductions: Deduction[] = [];
+  if (!cells || !regions) return deductions;
 
-  // Check each row and column for sandwich patterns
-  for (let i = 0; i < 10; i++) {
-    const stars = [];
-    for (let j = 0; j < 10; j++) {
-      if (cells?.[i]?.[j] === 1) stars.push(j);
+  // Check rows
+  for (let row = 0; row < 10; row++) {
+    if (!cells[row]) continue;
+    const stars: number[] = [];
+
+    // Find stars in this row
+    for (let col = 0; col < 10; col++) {
+      if (cells[row][col] === 1) {
+        stars.push(col);
+      }
     }
 
+    // Look for sandwich patterns
     if (stars.length === 1) {
-      const possiblePositions = [];
-      for (let j = 0; j < 10; j++) {
-        if (Math.abs(j - stars[0]) >= 2 && cells?.[i]?.[j] === 0) {
+      const possiblePositions: Position[] = [];
+      for (let col = 0; col < 10; col++) {
+        if (Math.abs(col - stars[0]) >= 2 && cells[row][col] === 0) {
           let valid = true;
-          // Check if placing a star here would create invalid patterns
-          const affected = getRelatedCells({ row: i, col: j }, regions);
+          const affected = getRelatedCells({ row, col }, regions);
           for (const pos of affected) {
-            if (cells?.[pos.row]?.[pos.col] === 1) valid = false;
+            if (!cells[pos.row] || !cells[pos.row][pos.col]) continue;
+            if (cells[pos.row][pos.col] === 1) {
+              valid = false;
+              break;
+            }
           }
-          if (valid) possiblePositions.push({ row: i, col: j });
+          if (valid) {
+            possiblePositions.push({ row, col });
+          }
         }
       }
 
       if (possiblePositions.length === 1) {
         deductions.push({
           type: 'pattern',
-          description: `Sandwich pattern in row ${i + 1}`,
+          description: `Sandwich pattern in row ${row + 1}`,
           explanation: 'Due to existing star placement and spacing rules, only one position remains valid',
           affected: possiblePositions,
           apply: () => {
@@ -76,6 +88,52 @@ const findSandwichPatterns = (cells: number[][], regions: number[][]): Deduction
       }
     }
   }
+
+  // Check columns - similar logic but transposed
+  for (let col = 0; col < 10; col++) {
+    const stars: number[] = [];
+
+    for (let row = 0; row < 10; row++) {
+      if (cells[row] && cells[row][col] === 1) {
+        stars.push(row);
+      }
+    }
+
+    if (stars.length === 1) {
+      const possiblePositions: Position[] = [];
+      for (let row = 0; row < 10; row++) {
+        if (cells[row] && Math.abs(row - stars[0]) >= 2 && cells[row][col] === 0) {
+          let valid = true;
+          const affected = getRelatedCells({ row, col }, regions);
+          for (const pos of affected) {
+            if (!cells[pos.row] || !cells[pos.row][pos.col]) continue;
+            if (cells[pos.row][pos.col] === 1) {
+              valid = false;
+              break;
+            }
+          }
+          if (valid) {
+            possiblePositions.push({ row, col });
+          }
+        }
+      }
+
+      if (possiblePositions.length === 1) {
+        deductions.push({
+          type: 'pattern',
+          description: `Sandwich pattern in column ${col + 1}`,
+          explanation: 'Due to existing star placement and spacing rules, only one position remains valid',
+          affected: possiblePositions,
+          apply: () => {
+            const { toggleCell } = useGameState.getState();
+            possiblePositions.forEach(pos => toggleCell(pos.row, pos.col, 'star'));
+          },
+          certainty: 'definite'
+        });
+      }
+    }
+  }
+
   return deductions;
 };
 
