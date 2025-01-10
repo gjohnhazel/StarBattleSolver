@@ -59,10 +59,17 @@ const findSandwichPatterns = (cells: number[][], regions: number[][]): Deduction
       for (let col = 0; col < 10; col++) {
         if (Math.abs(col - stars[0]) >= 2 && cells[row][col] === 0) {
           let valid = true;
+          console.log(`Checking affected cells for position [${row}][${col}]`);
           const affected = getRelatedCells({ row, col }, regions);
+          console.log('Related cells:', affected);
           for (const pos of affected) {
-            if (!cells[pos.row] || !cells[pos.row][pos.col]) continue;
+            console.log(`Checking affected cell [${pos.row}][${pos.col}]`);
+            if (!cells[pos.row] || !cells[pos.row][pos.col]) {
+              console.log(`Invalid cell access at [${pos.row}][${pos.col}]`);
+              continue;
+            }
             if (cells[pos.row][pos.col] === 1) {
+              console.log(`Found conflicting star at [${pos.row}][${pos.col}]`);
               valid = false;
               break;
             }
@@ -104,10 +111,17 @@ const findSandwichPatterns = (cells: number[][], regions: number[][]): Deduction
       for (let row = 0; row < 10; row++) {
         if (cells[row] && Math.abs(row - stars[0]) >= 2 && cells[row][col] === 0) {
           let valid = true;
+          console.log(`Checking affected cells for position [${row}][${col}]`);
           const affected = getRelatedCells({ row, col }, regions);
+          console.log('Related cells:', affected);
           for (const pos of affected) {
-            if (!cells[pos.row] || !cells[pos.row][pos.col]) continue;
+            console.log(`Checking affected cell [${pos.row}][${pos.col}]`);
+            if (!cells[pos.row] || !cells[pos.row][pos.col]) {
+              console.log(`Invalid cell access at [${pos.row}][${pos.col}]`);
+              continue;
+            }
             if (cells[pos.row][pos.col] === 1) {
+              console.log(`Found conflicting star at [${pos.row}][${pos.col}]`);
               valid = false;
               break;
             }
@@ -298,7 +312,7 @@ const findRegions = (horizontal: boolean[][], vertical: boolean[][]): number[][]
 
 const findSquareRegions = (cells: number[][], regions: number[][]): Deduction[] => {
   const deductions: Deduction[] = [];
-  
+
   // Get all cells in each region
   const regionCells: Position[][] = [];
   for (let i = 0; i < 10; i++) {
@@ -316,7 +330,7 @@ const findSquareRegions = (cells: number[][], regions: number[][]): Deduction[] 
       const maxRow = Math.max(...cells.map(c => c.row));
       const minCol = Math.min(...cells.map(c => c.col));
       const maxCol = Math.max(...cells.map(c => c.col));
-      
+
       // Check if it's a 3x3 square or near-square
       if (maxRow - minRow === 2 && maxCol - minCol === 2) {
         // Find center cell
@@ -324,7 +338,7 @@ const findSquareRegions = (cells: number[][], regions: number[][]): Deduction[] 
           row: minRow + 1,
           col: minCol + 1
         };
-        
+
         if (cells.some(c => c.row === centerPos.row && c.col === centerPos.col)) {
           deductions.push({
             type: 'pattern',
@@ -347,7 +361,7 @@ const findSquareRegions = (cells: number[][], regions: number[][]): Deduction[] 
 
 const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[] => {
   const deductions: Deduction[] = [];
-  
+
   // Get all cells in each region
   const regionCells: Position[][] = [];
   for (let i = 0; i < 10; i++) {
@@ -365,14 +379,14 @@ const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
       const maxRow = Math.max(...cells.map(c => c.row));
       const minCol = Math.min(...cells.map(c => c.col));
       const maxCol = Math.max(...cells.map(c => c.col));
-      
+
       // Check if it's a T shape (3x2 or 2x3 bounding box)
       if ((maxRow - minRow === 2 && maxCol - minCol === 1) || 
           (maxRow - minRow === 1 && maxCol - minCol === 2)) {
-        
+
         // Find the center and bottom cells
         const affectedCells: Position[] = [];
-        
+
         // For vertical T
         if (maxRow - minRow === 2 && maxCol - minCol === 1) {
           // Center cell (middle of vertical line)
@@ -422,7 +436,7 @@ const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
 
 const findSingleLineRegions = (cells: number[][], regions: number[][]): Deduction[] => {
   const deductions: Deduction[] = [];
-  
+
   // Get all cells in each region
   const regionCells: Position[][] = [];
   for (let i = 0; i < 10; i++) {
@@ -439,11 +453,11 @@ const findSingleLineRegions = (cells: number[][], regions: number[][]): Deductio
       // Check if all cells are in one row
       const uniqueRows = new Set(cells.map(c => c.row));
       const uniqueCols = new Set(cells.map(c => c.col));
-      
+
       if (uniqueRows.size === 1 || uniqueCols.size === 1) {
         const line = uniqueRows.size === 1 ? cells[0].row : null;
         const col = uniqueCols.size === 1 ? cells[0].col : null;
-        
+
         // Find other cells in same line but different region
         const affectedCells: Position[] = [];
         for (let i = 0; i < 10; i++) {
@@ -455,7 +469,7 @@ const findSingleLineRegions = (cells: number[][], regions: number[][]): Deductio
             }
           }
         }
-        
+
         if (affectedCells.length > 0) {
           deductions.push({
             type: 'pattern',
@@ -472,7 +486,7 @@ const findSingleLineRegions = (cells: number[][], regions: number[][]): Deductio
       }
     }
   });
-  
+
   return deductions;
 };
 
@@ -589,7 +603,7 @@ export const useSolver = create<SolverState>((set, get) => ({
     // Check if puzzle has been drawn (at least some boundaries exist)
     const hasRegions = horizontal.some(row => row.some(cell => cell)) || 
                       vertical.some(row => row.some(cell => cell));
-    
+
     if (!hasRegions) {
       set({
         deductions: [{
