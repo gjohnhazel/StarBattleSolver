@@ -356,6 +356,59 @@ const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
   return deductions;
 };
 
+const findSingleLineRegions = (cells: number[][], regions: number[][]): Deduction[] => {
+  const deductions: Deduction[] = [];
+  
+  // Get all cells in each region
+  const regionCells: Position[][] = [];
+  for (let i = 0; i < 10; i++) {
+    for (let j = 0; j < 10; j++) {
+      const regionId = regions[i][j];
+      if (!regionCells[regionId]) regionCells[regionId] = [];
+      regionCells[regionId].push({ row: i, col: j });
+    }
+  }
+
+  // Check each region
+  regionCells.forEach((cells, regionId) => {
+    if (cells.length >= 5) {  // Only check regions that would need 2 stars
+      // Check if all cells are in one row
+      const uniqueRows = new Set(cells.map(c => c.row));
+      const uniqueCols = new Set(cells.map(c => c.col));
+      
+      if (uniqueRows.size === 1 || uniqueCols.size === 1) {
+        const line = uniqueRows.size === 1 ? cells[0].row : null;
+        const col = uniqueCols.size === 1 ? cells[0].col : null;
+        
+        // Find other cells in same line but different region
+        const affectedCells: Position[] = [];
+        for (let i = 0; i < 10; i++) {
+          const pos = line !== null ? { row: line, col: i } : { row: i, col: col! };
+          if (regions[pos.row][pos.col] !== regionId && cells[pos.row][pos.col] === 0) {
+            affectedCells.push(pos);
+          }
+        }
+        
+        if (affectedCells.length > 0) {
+          deductions.push({
+            type: 'pattern',
+            description: `${line !== null ? 'Row' : 'Column'} region requires all stars`,
+            explanation: `Since region ${regionId} occupies an entire ${line !== null ? 'row' : 'column'}, it must contain both stars for that ${line !== null ? 'row' : 'column'}. Other cells in this ${line !== null ? 'row' : 'column'} must be empty.`,
+            affected: affectedCells,
+            apply: () => {
+              const { toggleCell } = useGameState.getState();
+              affectedCells.forEach(pos => toggleCell(pos.row, pos.col, 'empty'));
+            },
+            certainty: 'definite'
+          });
+        }
+      }
+    }
+  });
+  
+  return deductions;
+};
+
 const analyzeRegions = (cells: number[][], horizontal: boolean[][], vertical: boolean[][]): Deduction[] => {
   const deductions: Deduction[] = [];
   const regions = findRegions(horizontal, vertical);
@@ -493,6 +546,7 @@ export const useSolver = create<SolverState>((set, get) => ({
       ...findMultiUnitConstraints(cells, regions),
       ...findSquareRegions(cells, regions),
       ...findTShapedRegions(cells, regions),
+      ...findSingleLineRegions(cells, regions),
       ...analyzeRegions(cells, horizontal, vertical)
     ];
 
