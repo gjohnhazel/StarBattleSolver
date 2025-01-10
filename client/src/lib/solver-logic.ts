@@ -14,6 +14,7 @@ interface Deduction {
   affected: Position[];
   apply: () => void;
   certainty: 'definite' | 'likely';
+  isApplied?: boolean;
 }
 
 // Find all cells that share a unit (row, column, or region) with the given position
@@ -65,7 +66,8 @@ const findSandwichPatterns = (cells: number[][], regions: number[][]): Deduction
             const { toggleCell } = useGameState.getState();
             possiblePositions.forEach(pos => toggleCell(pos.row, pos.col, 'star'));
           },
-          certainty: 'definite'
+          certainty: 'definite',
+          isApplied: false
         });
       }
     }
@@ -103,7 +105,8 @@ const findLockedSets = (cells: number[][], regions: number[][]): Deduction[] => 
           const { toggleCell } = useGameState.getState();
           emptyCells.forEach(pos => toggleCell(pos.row, pos.col, 'star'));
         },
-        certainty: 'definite'
+        certainty: 'definite',
+        isApplied: false
       });
     }
   }
@@ -131,7 +134,8 @@ const findMultiUnitConstraints = (cells: number[][], regions: number[][]): Deduc
               const { toggleCell } = useGameState.getState();
               toggleCell(i, j, 'star');
             },
-            certainty: 'definite'
+            certainty: 'definite',
+            isApplied: false
           });
         }
       }
@@ -169,7 +173,8 @@ const findBasicDeductions = (cells: number[][]): Deduction[] => {
             const { toggleCell } = useGameState.getState();
             toggleCell(i, lastEmptyCol, 'star');
           },
-          certainty: 'definite'
+          certainty: 'definite',
+          isApplied: false
         });
       }
     }
@@ -271,7 +276,8 @@ const findSquareRegions = (cells: number[][], regions: number[][]): Deduction[] 
               const { toggleCell } = useGameState.getState();
               toggleCell(centerPos.row, centerPos.col, 'empty');
             },
-            certainty: 'definite'
+            certainty: 'definite',
+            isApplied: false
           });
         }
       }
@@ -353,7 +359,8 @@ const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
             toggleCell(middleCell.row, middleCell.col, 'empty');
             toggleCell(stemCell.row, stemCell.col, 'empty');
           },
-          certainty: 'definite'
+          certainty: 'definite',
+          isApplied: false
         });
       }
     }
@@ -404,7 +411,8 @@ const analyzeRegions = (cells: number[][], horizontal: boolean[][], vertical: bo
               }
             });
           },
-          certainty: 'definite'
+          certainty: 'definite',
+          isApplied: false
         });
       }
     }
@@ -423,7 +431,8 @@ const analyzeRegions = (cells: number[][], horizontal: boolean[][], vertical: bo
             toggleCell(pos.row, pos.col, 'star');
           });
         },
-        certainty: 'definite'
+        certainty: 'definite',
+        isApplied: false
       });
     }
   });
@@ -464,6 +473,7 @@ export const useSolver = create<SolverState>((set, get) => ({
   applyDeduction: (index: number) => {
     const { deductions } = get();
     if (deductions[index]) {
+      deductions[index].isApplied = !deductions[index].isApplied; // Toggle applied state
       deductions[index].apply();
     }
   },
@@ -484,7 +494,8 @@ export const useSolver = create<SolverState>((set, get) => ({
           explanation: "Please draw the puzzle regions first in Draw Mode before using hints.",
           affected: [],
           apply: () => {},
-          certainty: 'definite'
+          certainty: 'definite',
+          isApplied: false
         }],
         currentDeduction: 0
       });
@@ -522,7 +533,8 @@ export const useSolver = create<SolverState>((set, get) => ({
         explanation: "Try looking for basic patterns: rows/columns that need exactly two stars, cells that can't contain stars due to adjacency, or regions that must contain specific numbers of stars.",
         affected: [],
         apply: () => {}, // No specific action for general hint
-        certainty: 'likely'
+        certainty: 'likely',
+        isApplied: false
       });
     }
 
@@ -574,7 +586,8 @@ const findSixCellRectangles = (cells: number[][], regions: number[][]): Deductio
                             toggleCell(pos.row, pos.col, 'empty');
                         });
                     },
-                    certainty: 'definite'
+                    certainty: 'definite',
+                    isApplied: false
                 });
             }
         }
@@ -585,7 +598,7 @@ const findSixCellRectangles = (cells: number[][], regions: number[][]): Deductio
 
 const findSingleLineRegions = (cells: number[][], regions: number[][]): Deduction[] => {
   const deductions: Deduction[] = [];
-  
+
   // Get all cells in each region
   const regionCells: Position[][] = [];
   for (let i = 0; i < 10; i++) {
@@ -623,7 +636,8 @@ const findSingleLineRegions = (cells: number[][], regions: number[][]): Deductio
             const { toggleCell } = useGameState.getState();
             affectedCells.forEach(pos => toggleCell(pos.row, pos.col, 'empty'));
           },
-          certainty: 'definite'
+          certainty: 'definite',
+          isApplied: false
         });
       }
     }
@@ -651,7 +665,8 @@ const findSingleLineRegions = (cells: number[][], regions: number[][]): Deductio
             const { toggleCell } = useGameState.getState();
             affectedCells.forEach(pos => toggleCell(pos.row, pos.col, 'empty'));
           },
-          certainty: 'definite'
+          certainty: 'definite',
+          isApplied: false
         });
       }
     }

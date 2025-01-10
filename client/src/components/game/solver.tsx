@@ -129,10 +129,13 @@ export function Solver({ onClose }: SolverProps) {
 
                 <Button 
                   className="w-full"
-                  onClick={() => applyDeduction(currentDeduction)}
+                  onClick={() => {
+                    currentHint.isApplied = !currentHint.isApplied;
+                    applyDeduction(currentDeduction);
+                  }}
                   disabled={currentHint.affected.length === 0}
                 >
-                  Apply Deduction
+                  {currentHint.isApplied ? 'Remove Deduction' : 'Apply Deduction'}
                 </Button>
               </div>
             </CardContent>
