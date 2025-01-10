@@ -384,7 +384,7 @@ const findSingleLineRegions = (cells: number[][], regions: number[][]): Deductio
         const affectedCells: Position[] = [];
         for (let i = 0; i < 10; i++) {
           const pos = line !== null ? { row: line, col: i } : { row: i, col: col! };
-          if (regions[pos.row][pos.col] !== regionId && cells[pos.row][pos.col] === 0) {
+          if (regions[pos.row][pos.col] !== regionId && cells?.[pos.row]?.[pos.col] === 0) {
             affectedCells.push(pos);
           }
         }
