@@ -1,0 +1,66 @@
+Create a mobile-friendly web application for solving Star Battle puzzles. The key requirements are:
+
+## 1. Grid Interface:
+- 10x10 grid
+- Two modes toggled by buttons at the top:
+  * Draw Mode: For creating regions by tapping between cells to create boundaries
+  * Solve Mode: For placing stars and X marks
+- Boundary lines should be:
+  * Black in Draw Mode
+  * Thick white with subtle shadow in Solve Mode
+- Cell interaction in Solve Mode:
+  * Single tap: Place/remove X
+  * Double tap: Place/remove star
+
+## 2. Visual Elements:
+- Use white stars (★) for placed stars
+- Use red X marks for impossible positions
+- Use clean, mobile-friendly touch targets
+- Show visible feedback for tappable areas in Draw Mode
+- Ensure the grid is responsive and maintains square aspect ratio
+
+## 3. Rules Implementation:
+- Each row must contain exactly 2 stars
+- Each column must contain exactly 2 stars
+- Each region must contain exactly 2 stars
+- Stars cannot be adjacent (including diagonally)
+
+## 4. Solver Guidance:
+- Display available logical deductions based on:
+  * Complete rows/columns/regions (2 stars found)
+  * Forced moves (only one position remaining)
+  * Adjacent cell restrictions
+  * Region rules
+- Show one hint at a time with navigation
+- Allow seeing all available deductions
+- Button to automatically apply current deduction
+- dd advanced solving logic including:
+
+1. Pattern Recognition:
+- Identify "sandwich" patterns where stars in one unit force arrangements in intersecting units
+- Detect locked pairs/triples across multiple units
+- Find domino effects where one placement forces invalid configurations
+
+2. Area Analysis:
+- Calculate maximum possible stars in connected areas
+- Identify areas where star count requirements force specific placements
+- Detect when regions/rows/columns interact to limit possible positions
+
+3. Multi-Unit Logic:
+- Track star requirements across intersecting units
+- Identify when multiple constraints combine to force placements
+- Calculate when remaining spaces in multiple units force specific distributions
+
+4. Visualization Hints:
+- Highlight affected cells for each deduction
+- Show chains of logic for complex deductions
+- Indicate strength/certainty of each logical step
+
+The solver should prioritize simpler deductions before suggesting complex ones, but make all levels of logic available to users who want to understand advanced solving techniques.
+
+## 5. Technical Notes:
+- Use touch-friendly event handling (300ms double-tap threshold)
+- Store boundary state separately from cell state
+- Use Lucide icons for UI elements
+
+The interface should feel natural on mobile devices while making it easy to both create and solve puzzles step by step.
