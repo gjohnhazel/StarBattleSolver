@@ -315,8 +315,27 @@ export const useSolver = create<SolverState>((set, get) => ({
   generateDeductions: () => {
     const { gridState } = useGameState.getState();
     const { cells, horizontal, vertical } = gridState;
-    const regions = findRegions(horizontal, vertical);
 
+    // Check if puzzle has been drawn (at least some boundaries exist)
+    const hasRegions = horizontal.some(row => row.some(cell => cell)) || 
+                      vertical.some(row => row.some(cell => cell));
+    
+    if (!hasRegions) {
+      set({
+        deductions: [{
+          type: 'basic',
+          description: "No puzzle boundaries detected",
+          explanation: "Please draw the puzzle regions first in Draw Mode before using hints.",
+          affected: [],
+          apply: () => {},
+          certainty: 'definite'
+        }],
+        currentDeduction: 0
+      });
+      return;
+    }
+
+    const regions = findRegions(horizontal, vertical);
     const deductions: Deduction[] = [
       ...findBasicDeductions(cells),
       ...findSandwichPatterns(cells, regions),
