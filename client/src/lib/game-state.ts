@@ -7,6 +7,12 @@ interface GridState {
   vertical: boolean[][];
 }
 
+interface SavedPuzzle {
+  id: string;
+  timestamp: number;
+  gridState: GridState;
+}
+
 interface GameState {
   gridState: GridState;
   toggleHorizontalBoundary: (row: number, col: number) => void;
@@ -14,12 +20,36 @@ interface GameState {
   toggleCell: (row: number, col: number, type: 'star' | 'x') => void;
   reset: () => void;
   validateGrid: () => boolean;
+  savePuzzle: () => void;
+  loadPuzzle: (id: string) => void;
+  loadMostRecent: () => void;
+  getAllSavedPuzzles: () => SavedPuzzle[];
 }
+
+const STORAGE_KEY = 'star-battle-puzzles';
 
 const initialState: GridState = {
   cells: Array(10).fill(null).map(() => Array(10).fill(0)),
   horizontal: Array(11).fill(null).map(() => Array(10).fill(false)),
   vertical: Array(10).fill(null).map(() => Array(11).fill(false))
+};
+
+const loadSavedPuzzles = (): SavedPuzzle[] => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch (error) {
+    console.error('Error loading saved puzzles:', error);
+    return [];
+  }
+};
+
+const savePuzzlesToStorage = (puzzles: SavedPuzzle[]) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(puzzles));
+  } catch (error) {
+    console.error('Error saving puzzles:', error);
+  }
 };
 
 export const useGameState = create<GameState>((set, get) => ({
@@ -95,4 +125,51 @@ export const useGameState = create<GameState>((set, get) => ({
 
     return true;
   },
+
+  savePuzzle: () => {
+    const { gridState } = get();
+    const toast = useToast();
+    const puzzles = loadSavedPuzzles();
+
+    const newPuzzle: SavedPuzzle = {
+      id: Date.now().toString(),
+      timestamp: Date.now(),
+      gridState
+    };
+
+    puzzles.push(newPuzzle);
+    savePuzzlesToStorage(puzzles);
+    toast.toast({
+      title: "Puzzle saved",
+      description: "Your current puzzle has been saved successfully.",
+    });
+  },
+
+  loadPuzzle: (id: string) => {
+    const puzzles = loadSavedPuzzles();
+    const puzzle = puzzles.find(p => p.id === id);
+    const toast = useToast();
+
+    if (puzzle) {
+      set({ gridState: puzzle.gridState });
+      toast.toast({
+        title: "Puzzle loaded",
+        description: "The selected puzzle has been loaded successfully.",
+      });
+    }
+  },
+
+  loadMostRecent: () => {
+    const puzzles = loadSavedPuzzles();
+    if (puzzles.length > 0) {
+      const mostRecent = puzzles.reduce((prev, current) => 
+        prev.timestamp > current.timestamp ? prev : current
+      );
+      get().loadPuzzle(mostRecent.id);
+    }
+  },
+
+  getAllSavedPuzzles: () => {
+    return loadSavedPuzzles();
+  }
 }));

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useGameState } from '@/lib/game-state';
 
 interface GridProps {
@@ -6,8 +6,13 @@ interface GridProps {
 }
 
 export function Grid({ mode }: GridProps) {
-  const { gridState, toggleHorizontalBoundary, toggleVerticalBoundary, toggleCell } = useGameState();
+  const { gridState, toggleHorizontalBoundary, toggleVerticalBoundary, toggleCell, loadMostRecent } = useGameState();
   const [lastTap, setLastTap] = useState<{ time: number, row: number, col: number } | null>(null);
+
+  // Load most recent puzzle on component mount
+  useEffect(() => {
+    loadMostRecent();
+  }, []);
 
   const handleBoundaryTap = (
     event: React.TouchEvent,
