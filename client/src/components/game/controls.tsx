@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useGameState } from "@/lib/game-state";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Lightbulb,
   RotateCcw,
@@ -12,7 +13,19 @@ interface ControlsProps {
 }
 
 export function Controls({ mode, onShowHints }: ControlsProps) {
-  const { reset, validate } = useGameState();
+  const { reset, validateGrid } = useGameState();
+  const { toast } = useToast();
+
+  const handleValidate = () => {
+    const isValid = validateGrid();
+    toast({
+      title: isValid ? "Puzzle Solved!" : "Invalid Solution",
+      description: isValid 
+        ? "Congratulations! All rules are satisfied."
+        : "The current placement violates some rules. Try using hints for help.",
+      variant: isValid ? "default" : "destructive",
+    });
+  };
 
   return (
     <div className="flex gap-2 mt-4">
@@ -37,7 +50,7 @@ export function Controls({ mode, onShowHints }: ControlsProps) {
           </Button>
 
           <Button
-            onClick={validate}
+            onClick={handleValidate}
             className="flex-1"
           >
             <Check className="w-4 h-4 mr-2" />

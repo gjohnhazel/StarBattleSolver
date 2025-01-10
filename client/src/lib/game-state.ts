@@ -13,7 +13,7 @@ interface GameState {
   toggleVerticalBoundary: (row: number, col: number) => void;
   toggleCell: (row: number, col: number, type: 'star' | 'x') => void;
   reset: () => void;
-  validate: () => void;
+  validateGrid: () => boolean;
 }
 
 const initialState: GridState = {
@@ -64,50 +64,35 @@ export const useGameState = create<GameState>((set, get) => ({
     set({ gridState: initialState });
   },
 
-  validate: () => {
+  validateGrid: () => {
     const { gridState } = get();
-    const { toast } = useToast();
+    const { cells } = gridState;
 
-    // Count stars in each row and column
-    const isValid = validateGrid(gridState);
+    // Check rows and columns
+    for (let i = 0; i < 10; i++) {
+      const rowStars = cells[i].filter(cell => cell === 1).length;
+      const colStars = cells.map(row => row[i]).filter(cell => cell === 1).length;
+      if (rowStars !== 2 || colStars !== 2) return false;
+    }
 
-    toast({
-      title: isValid ? "Puzzle Solved!" : "Invalid Solution",
-      description: isValid 
-        ? "Congratulations! All rules are satisfied."
-        : "The current placement violates some rules.",
-      variant: isValid ? "default" : "destructive",
-    });
-  },
-}));
-
-function validateGrid(state: GridState): boolean {
-  const { cells } = state;
-
-  // Check rows and columns
-  for (let i = 0; i < 10; i++) {
-    const rowStars = cells[i].filter(cell => cell === 1).length;
-    const colStars = cells.map(row => row[i]).filter(cell => cell === 1).length;
-    if (rowStars !== 2 || colStars !== 2) return false;
-  }
-
-  // Check adjacent stars
-  for (let i = 0; i < 10; i++) {
-    for (let j = 0; j < 10; j++) {
-      if (cells[i][j] === 1) {
-        // Check all 8 adjacent cells
-        for (let di = -1; di <= 1; di++) {
-          for (let dj = -1; dj <= 1; dj++) {
-            if (di === 0 && dj === 0) continue;
-            const ni = i + di, nj = j + dj;
-            if (ni >= 0 && ni < 10 && nj >= 0 && nj < 10) {
-              if (cells[ni][nj] === 1) return false;
+    // Check adjacent stars
+    for (let i = 0; i < 10; i++) {
+      for (let j = 0; j < 10; j++) {
+        if (cells[i][j] === 1) {
+          // Check all 8 adjacent cells
+          for (let di = -1; di <= 1; di++) {
+            for (let dj = -1; dj <= 1; dj++) {
+              if (di === 0 && dj === 0) continue;
+              const ni = i + di, nj = j + dj;
+              if (ni >= 0 && ni < 10 && nj >= 0 && nj < 10) {
+                if (cells[ni][nj] === 1) return false;
+              }
             }
           }
         }
       }
     }
-  }
 
-  return true;
-}
+    return true;
+  },
+}));

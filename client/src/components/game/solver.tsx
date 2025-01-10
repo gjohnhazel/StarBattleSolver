@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { X } from "lucide-react";
@@ -8,7 +9,11 @@ interface SolverProps {
 }
 
 export function Solver({ onClose }: SolverProps) {
-  const { hints, currentHint, nextHint, prevHint, applyHint } = useSolver();
+  const { hints, currentHint, nextHint, prevHint, applyHint, generateHints } = useSolver();
+
+  useEffect(() => {
+    generateHints();
+  }, [generateHints]);
 
   return (
     <div className="space-y-4">
@@ -22,8 +27,8 @@ export function Solver({ onClose }: SolverProps) {
       <ScrollArea className="h-[200px] rounded-md border p-4">
         {hints.length > 0 ? (
           <div className="space-y-4">
-            <p className="text-sm">{hints[currentHint]?.description}</p>
-            
+            <p className="text-sm text-foreground">{hints[currentHint]?.description}</p>
+
             <div className="flex justify-between">
               <Button
                 variant="outline"
