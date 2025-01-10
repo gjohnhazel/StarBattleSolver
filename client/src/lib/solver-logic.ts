@@ -234,7 +234,7 @@ const findRegions = (horizontal: boolean[][], vertical: boolean[][]): number[][]
 
 const findSquareRegions = (cells: number[][], regions: number[][]): Deduction[] => {
   const deductions: Deduction[] = [];
-  
+
   // Get all cells in each region
   const regionCells: Position[][] = [];
   for (let i = 0; i < 10; i++) {
@@ -252,7 +252,7 @@ const findSquareRegions = (cells: number[][], regions: number[][]): Deduction[] 
       const maxRow = Math.max(...cells.map(c => c.row));
       const minCol = Math.min(...cells.map(c => c.col));
       const maxCol = Math.max(...cells.map(c => c.col));
-      
+
       // Check if it's a 3x3 square or near-square
       if (maxRow - minRow === 2 && maxCol - minCol === 2) {
         // Find center cell
@@ -260,7 +260,7 @@ const findSquareRegions = (cells: number[][], regions: number[][]): Deduction[] 
           row: minRow + 1,
           col: minCol + 1
         };
-        
+
         if (cells.some(c => c.row === centerPos.row && c.col === centerPos.col)) {
           deductions.push({
             type: 'pattern',
@@ -283,7 +283,7 @@ const findSquareRegions = (cells: number[][], regions: number[][]): Deduction[] 
 
 const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[] => {
   const deductions: Deduction[] = [];
-  
+
   // Get all cells in each region
   const regionCells: Position[][] = [];
   for (let i = 0; i < 10; i++) {
@@ -301,14 +301,14 @@ const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
       const maxRow = Math.max(...cells.map(c => c.row));
       const minCol = Math.min(...cells.map(c => c.col));
       const maxCol = Math.max(...cells.map(c => c.col));
-      
+
       // Check if it's a T shape (3x2 or 2x3 bounding box)
       if ((maxRow - minRow === 2 && maxCol - minCol === 1) || 
           (maxRow - minRow === 1 && maxCol - minCol === 2)) {
-        
+
         // Find the center and bottom cells
         const affectedCells: Position[] = [];
-        
+
         // For vertical T
         if (maxRow - minRow === 2 && maxCol - minCol === 1) {
           // Center cell (middle of vertical line)
@@ -469,7 +469,7 @@ export const useSolver = create<SolverState>((set, get) => ({
     // Check if puzzle has been drawn (at least some boundaries exist)
     const hasRegions = horizontal.some(row => row.some(cell => cell)) || 
                       vertical.some(row => row.some(cell => cell));
-    
+
     if (!hasRegions) {
       set({
         deductions: [{
@@ -496,6 +496,11 @@ export const useSolver = create<SolverState>((set, get) => ({
       ...analyzeRegions(cells, horizontal, vertical)
     ];
 
+    //Added hint for 6 cell rectangle regions
+    const sixCellRectangles = findSixCellRectangles(cells, regions);
+    deductions.push(...sixCellRectangles);
+
+
     // Sort deductions by complexity (basic -> pattern -> area -> multi-unit)
     deductions.sort((a, b) => {
       const typeOrder = { basic: 0, pattern: 1, area: 2, 'multi-unit': 3 };
@@ -517,3 +522,48 @@ export const useSolver = create<SolverState>((set, get) => ({
     set({ deductions, currentDeduction: 0 });
   },
 }));
+
+const findSixCellRectangles = (cells: number[][], regions: number[][]): Deduction[] => {
+    const deductions: Deduction[] = [];
+    // Iterate through regions
+    for (let regionId = 0; regionId < regions.length; regionId++) {
+        const regionCells: Position[] = [];
+        for (let i = 0; i < 10; i++) {
+            for (let j = 0; j < 10; j++) {
+                if (regions[i][j] === regionId) {
+                    regionCells.push({ row: i, col: j });
+                }
+            }
+        }
+
+        // Check if region is a 6-cell rectangle
+        if (regionCells.length === 6) {
+            // Find the bounding box of the region
+            const minRow = Math.min(...regionCells.map(cell => cell.row));
+            const maxRow = Math.max(...regionCells.map(cell => cell.row));
+            const minCol = Math.min(...regionCells.map(cell => cell.col));
+            const maxCol = Math.max(...regionCells.map(cell => cell.col));
+
+            // Check if the region is a 2x3 or 3x2 rectangle
+            if ((maxRow - minRow === 2 && maxCol - minCol === 1) || (maxRow - minRow === 1 && maxCol - minCol === 2)) {
+                const validCenterCells: Position[] = [];
+                // Determine the center cell(s)
+                if (maxRow - minRow === 2) {
+                    validCenterCells.push({ row: minRow + 1, col: minCol });
+                } else {
+                    validCenterCells.push({ row: minRow, col: minCol + 1 });
+                }
+
+                deductions.push({
+                    type: 'pattern',
+                    description: '6-cell rectangle region center cells must be empty',
+                    explanation: 'In a 6-cell rectangle region, the center cells cannot contain stars since this would prevent placing two stars in the region (stars cannot be adjacent). The remaining positions would not allow two stars to be placed.',
+                    affected: validCenterCells,
+                    apply: () => {},
+                    certainty: 'definite'
+                });
+            }
+        }
+    }
+    return deductions;
+};
