@@ -304,24 +304,42 @@ const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
         colCounts.set(cell.col, (colCounts.get(cell.col) || 0) + 1);
       });
 
-      // Check for both vertical and horizontal T shapes
-      const row3 = Array.from(rowCounts.entries()).find(([_, count]) => count === 3);
-      const col3 = Array.from(colCounts.entries()).find(([_, count]) => count === 3);
-      const row2 = Array.from(rowCounts.entries()).find(([_, count]) => count === 2);
-      const col2 = Array.from(colCounts.entries()).find(([_, count]) => count === 2);
+      // Get min/max coordinates to determine shape
+      const minRow = Math.min(...cells.map(c => c.row));
+      const maxRow = Math.max(...cells.map(c => c.row));
+      const minCol = Math.min(...cells.map(c => c.col));
+      const maxCol = Math.max(...cells.map(c => c.col));
 
       let middleCell = null;
       let stemCell = null;
 
-      // Vertical T (stem points down)
-      if (row3 && col2) {
-        middleCell = cells.find(c => c.row === row3[0] && c.col === col2[0]);
-        stemCell = cells.find(c => c.row !== row3[0] && c.col === col2[0]);
+      // Check for vertical T (stem points down)
+      if (maxRow - minRow === 2 && maxCol - minCol === 2) {
+        const topRow = cells.filter(c => c.row === minRow);
+        const middleRowCells = cells.filter(c => c.row === minRow + 1);
+        const bottomCell = cells.find(c => c.row === maxRow);
+
+        if (topRow.length === 3 && middleRowCells.length === 1 && bottomCell) {
+          const middleTop = topRow.find(c => c.col === middleRowCells[0].col);
+          if (middleTop && bottomCell.col === middleRowCells[0].col) {
+            middleCell = middleTop;
+            stemCell = bottomCell;
+          }
+        }
       }
-      // Horizontal T (stem points right/left)
-      else if (col3 && row2) {
-        middleCell = cells.find(c => c.row === row2[0] && c.col === col3[0]);
-        stemCell = cells.find(c => c.row === row2[0] && c.col !== col3[0]);
+      // Check for horizontal T (stem points right)
+      else if (maxRow - minRow === 1 && maxCol - minCol === 2) {
+        const leftCol = cells.filter(c => c.col === minCol);
+        const middleColCells = cells.filter(c => c.col === minCol + 1);
+        const rightCell = cells.find(c => c.col === maxCol);
+
+        if (leftCol.length === 3 && middleColCells.length === 1 && rightCell) {
+          const middleLeft = leftCol.find(c => c.row === middleColCells[0].row);
+          if (middleLeft && rightCell.row === middleColCells[0].row) {
+            middleCell = middleLeft;
+            stemCell = rightCell;
+          }
+        }
       }
 
       if (middleCell && stemCell) {
