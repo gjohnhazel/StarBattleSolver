@@ -484,6 +484,7 @@ export const useSolver = create<SolverState>((set, get) => ({
       ...findMultiUnitConstraints(cells, regions),
       ...findSquareRegions(cells, regions),
       ...findTShapedRegions(cells, regions),
+      ...findSingleLineRegions(cells, regions),
       ...analyzeRegions(cells, horizontal, vertical)
     ];
 
@@ -564,4 +565,82 @@ const findSixCellRectangles = (cells: number[][], regions: number[][]): Deductio
         }
     }
     return deductions;
+};
+
+
+const findSingleLineRegions = (cells: number[][], regions: number[][]): Deduction[] => {
+  const deductions: Deduction[] = [];
+  
+  // Get all cells in each region
+  const regionCells: Position[][] = [];
+  for (let i = 0; i < 10; i++) {
+    for (let j = 0; j < 10; j++) {
+      const regionId = regions[i][j];
+      if (!regionCells[regionId]) regionCells[regionId] = [];
+      regionCells[regionId].push({ row: i, col: j });
+    }
+  }
+
+  // Check each region
+  regionCells.forEach((cellsInRegion, regionId) => {
+    if (cellsInRegion.length === 0) return; // Skip empty regions
+
+    // Check if region is contained in single row
+    const rows = new Set(cellsInRegion.map(cell => cell.row));
+    if (rows.size === 1) {
+      const row = cellsInRegion[0].row;
+      const affectedCells: Position[] = [];
+
+      // Find cells in same row but different region
+      for (let col = 0; col < 10; col++) {
+        if (regions[row][col] !== regionId && cells[row][col] === 0) {
+          affectedCells.push({ row, col });
+        }
+      }
+
+      if (affectedCells.length > 0) {
+        deductions.push({
+          type: 'pattern',
+          description: `Region contained in row ${row + 1}`,
+          explanation: 'When a region is contained entirely within a single row, other cells in that row must be empty to satisfy the two-star-per-row rule',
+          affected: affectedCells,
+          apply: () => {
+            const { toggleCell } = useGameState.getState();
+            affectedCells.forEach(pos => toggleCell(pos.row, pos.col, 'empty'));
+          },
+          certainty: 'definite'
+        });
+      }
+    }
+
+    // Check if region is contained in single column
+    const cols = new Set(cellsInRegion.map(cell => cell.col));
+    if (cols.size === 1) {
+      const col = cellsInRegion[0].col;
+      const affectedCells: Position[] = [];
+
+      // Find cells in same column but different region
+      for (let row = 0; row < 10; row++) {
+        if (regions[row][col] !== regionId && cells[row][col] === 0) {
+          affectedCells.push({ row, col });
+        }
+      }
+
+      if (affectedCells.length > 0) {
+        deductions.push({
+          type: 'pattern',
+          description: `Region contained in column ${col + 1}`,
+          explanation: 'When a region is contained entirely within a single column, other cells in that column must be empty to satisfy the two-star-per-column rule',
+          affected: affectedCells,
+          apply: () => {
+            const { toggleCell } = useGameState.getState();
+            affectedCells.forEach(pos => toggleCell(pos.row, pos.col, 'empty'));
+          },
+          certainty: 'definite'
+        });
+      }
+    }
+  });
+
+  return deductions;
 };
