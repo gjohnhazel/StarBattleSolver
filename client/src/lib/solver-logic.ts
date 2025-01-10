@@ -44,18 +44,18 @@ const findSandwichPatterns = (cells: number[][], regions: number[][]): Deduction
   for (let i = 0; i < 10; i++) {
     const stars = [];
     for (let j = 0; j < 10; j++) {
-      if (cells[i][j] === 1) stars.push(j);
+      if (cells?.[i]?.[j] === 1) stars.push(j);
     }
 
     if (stars.length === 1) {
       const possiblePositions = [];
       for (let j = 0; j < 10; j++) {
-        if (Math.abs(j - stars[0]) >= 2 && cells[i][j] === 0) {
+        if (Math.abs(j - stars[0]) >= 2 && cells?.[i]?.[j] === 0) {
           let valid = true;
           // Check if placing a star here would create invalid patterns
           const affected = getRelatedCells({ row: i, col: j }, regions);
           for (const pos of affected) {
-            if (cells[pos.row][pos.col] === 1) valid = false;
+            if (cells?.[pos.row]?.[pos.col] === 1) valid = false;
           }
           if (valid) possiblePositions.push({ row: i, col: j });
         }
