@@ -232,6 +232,55 @@ const findRegions = (horizontal: boolean[][], vertical: boolean[][]): number[][]
   return grid;
 };
 
+const findSquareRegions = (cells: number[][], regions: number[][]): Deduction[] => {
+  const deductions: Deduction[] = [];
+  
+  // Get all cells in each region
+  const regionCells: Position[][] = [];
+  for (let i = 0; i < 10; i++) {
+    for (let j = 0; j < 10; j++) {
+      const regionId = regions[i][j];
+      if (!regionCells[regionId]) regionCells[regionId] = [];
+      regionCells[regionId].push({ row: i, col: j });
+    }
+  }
+
+  regionCells.forEach((cells, regionId) => {
+    if (cells.length === 9 || cells.length === 8) {
+      // Find bounding box
+      const minRow = Math.min(...cells.map(c => c.row));
+      const maxRow = Math.max(...cells.map(c => c.row));
+      const minCol = Math.min(...cells.map(c => c.col));
+      const maxCol = Math.max(...cells.map(c => c.col));
+      
+      // Check if it's a 3x3 square or near-square
+      if (maxRow - minRow === 2 && maxCol - minCol === 2) {
+        // Find center cell
+        const centerPos = {
+          row: minRow + 1,
+          col: minCol + 1
+        };
+        
+        if (cells.some(c => c.row === centerPos.row && c.col === centerPos.col)) {
+          deductions.push({
+            type: 'pattern',
+            description: `Center of ${cells.length}-cell square region must be empty`,
+            explanation: `In a ${cells.length}-cell square or near-square region, the center cell cannot contain a star due to adjacency rules`,
+            affected: [centerPos],
+            apply: () => {
+              const { toggleCell } = useGameState.getState();
+              toggleCell(centerPos.row, centerPos.col, 'empty');
+            },
+            certainty: 'definite'
+          });
+        }
+      }
+    }
+  });
+
+  return deductions;
+};
+
 const analyzeRegions = (cells: number[][], horizontal: boolean[][], vertical: boolean[][]): Deduction[] => {
   const deductions: Deduction[] = [];
   const regions = findRegions(horizontal, vertical);
@@ -367,6 +416,7 @@ export const useSolver = create<SolverState>((set, get) => ({
       ...findSandwichPatterns(cells, regions),
       ...findLockedSets(cells, regions),
       ...findMultiUnitConstraints(cells, regions),
+      ...findSquareRegions(cells, regions),
       ...analyzeRegions(cells, horizontal, vertical)
     ];
 
