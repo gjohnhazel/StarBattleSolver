@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { useToast } from '@/hooks/use-toast';
+import type { StateCreator } from 'zustand';
 
 interface GridState {
   cells: number[][];
@@ -20,7 +20,7 @@ interface GameState {
   toggleCell: (row: number, col: number, type: 'star' | 'x') => void;
   reset: () => void;
   validateGrid: () => boolean;
-  savePuzzle: () => void;
+  savePuzzle: () => SavedPuzzle;
   loadPuzzle: (id: string) => void;
   loadMostRecent: () => void;
   getAllSavedPuzzles: () => SavedPuzzle[];
@@ -35,6 +35,8 @@ const initialState: GridState = {
 };
 
 const loadSavedPuzzles = (): SavedPuzzle[] => {
+  if (typeof window === 'undefined') return [];
+
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved ? JSON.parse(saved) : [];
@@ -45,6 +47,8 @@ const loadSavedPuzzles = (): SavedPuzzle[] => {
 };
 
 const savePuzzlesToStorage = (puzzles: SavedPuzzle[]) => {
+  if (typeof window === 'undefined') return;
+
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(puzzles));
   } catch (error) {
@@ -128,7 +132,6 @@ export const useGameState = create<GameState>((set, get) => ({
 
   savePuzzle: () => {
     const { gridState } = get();
-    const toast = useToast();
     const puzzles = loadSavedPuzzles();
 
     const newPuzzle: SavedPuzzle = {
@@ -139,23 +142,15 @@ export const useGameState = create<GameState>((set, get) => ({
 
     puzzles.push(newPuzzle);
     savePuzzlesToStorage(puzzles);
-    toast.toast({
-      title: "Puzzle saved",
-      description: "Your current puzzle has been saved successfully.",
-    });
+    return newPuzzle;
   },
 
   loadPuzzle: (id: string) => {
     const puzzles = loadSavedPuzzles();
     const puzzle = puzzles.find(p => p.id === id);
-    const toast = useToast();
 
     if (puzzle) {
       set({ gridState: puzzle.gridState });
-      toast.toast({
-        title: "Puzzle loaded",
-        description: "The selected puzzle has been loaded successfully.",
-      });
     }
   },
 

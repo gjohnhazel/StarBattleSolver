@@ -1,17 +1,28 @@
 import { useRef, useState, useEffect } from 'react';
 import { useGameState } from '@/lib/game-state';
+import { useToast } from '@/hooks/use-toast';
 
 interface GridProps {
   mode: 'draw' | 'solve';
 }
 
 export function Grid({ mode }: GridProps) {
-  const { gridState, toggleHorizontalBoundary, toggleVerticalBoundary, toggleCell, loadMostRecent } = useGameState();
+  const { gridState, toggleHorizontalBoundary, toggleVerticalBoundary, toggleCell, loadMostRecent, savePuzzle } = useGameState();
   const [lastTap, setLastTap] = useState<{ time: number, row: number, col: number } | null>(null);
+  const { toast } = useToast();
 
   // Load most recent puzzle on component mount
   useEffect(() => {
-    loadMostRecent();
+    try {
+      loadMostRecent();
+    } catch (error) {
+      console.error('Error loading most recent puzzle:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load the most recent puzzle.",
+        variant: "destructive"
+      });
+    }
   }, []);
 
   const handleBoundaryTap = (
@@ -45,6 +56,23 @@ export function Grid({ mode }: GridProps) {
       // Single tap - place/remove X
       toggleCell(row, col, 'x');
       setLastTap({ time: now, row, col });
+    }
+  };
+
+  const handleSave = () => {
+    try {
+      const savedPuzzle = savePuzzle();
+      toast({
+        title: "Success",
+        description: "Your puzzle has been saved.",
+      });
+    } catch (error) {
+      console.error('Error saving puzzle:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save the puzzle.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -132,6 +160,7 @@ export function Grid({ mode }: GridProps) {
           ))
         ))}
       </div>
+      <button onClick={handleSave}>Save Puzzle</button>
     </div>
   );
 }
