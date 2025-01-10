@@ -76,8 +76,8 @@ export function Grid({ mode }: GridProps) {
   };
 
   const cellSize = size.width / 10;
-  const strokeWidth = mode === 'draw' ? 1 : 2;
-  const strokeColor = mode === 'draw' ? 'black' : 'white';
+  const strokeWidth = mode === 'draw' ? 2 : 3;
+  const strokeColor = mode === 'draw' ? '#000' : '#fff';
 
   return (
     <div className="relative aspect-square w-full">
@@ -86,7 +86,7 @@ export function Grid({ mode }: GridProps) {
         width="100%"
         height="100%"
         viewBox={`0 0 ${size.width} ${size.height}`}
-        className="touch-none bg-gray-900"
+        className="touch-none bg-gray-100"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -99,8 +99,8 @@ export function Grid({ mode }: GridProps) {
               x2={i * cellSize}
               y2={size.height}
               stroke={strokeColor}
-              strokeWidth={strokeWidth}
-              className="opacity-50"
+              strokeWidth={1}
+              className="opacity-30"
             />
             <line
               x1={0}
@@ -108,8 +108,8 @@ export function Grid({ mode }: GridProps) {
               x2={size.width}
               y2={i * cellSize}
               stroke={strokeColor}
-              strokeWidth={strokeWidth}
-              className="opacity-50"
+              strokeWidth={1}
+              className="opacity-30"
             />
           </g>
         ))}
@@ -118,12 +118,12 @@ export function Grid({ mode }: GridProps) {
         {boundaries.map((boundary: Boundary, i: number) => (
           <line
             key={i}
-            x1={boundary.x1 * cellSize + cellSize/2}
-            y1={boundary.y1 * cellSize + cellSize/2}
-            x2={boundary.x2 * cellSize + cellSize/2}
-            y2={boundary.y2 * cellSize + cellSize/2}
+            x1={boundary.x1 * cellSize}
+            y1={boundary.y1 * cellSize}
+            x2={boundary.x2 * cellSize}
+            y2={boundary.y2 * cellSize}
             stroke={strokeColor}
-            strokeWidth={strokeWidth * 2}
+            strokeWidth={strokeWidth}
             className={`${mode === 'solve' ? 'drop-shadow-md' : ''}`}
           />
         ))}
@@ -136,7 +136,7 @@ export function Grid({ mode }: GridProps) {
             y={pos.y * cellSize + cellSize/2}
             textAnchor="middle"
             dominantBaseline="middle"
-            fill="white"
+            fill="black"
             fontSize={cellSize * 0.6}
           >
             ★
