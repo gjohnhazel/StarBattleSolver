@@ -371,7 +371,7 @@ const findSingleLineRegions = (cells: number[][], regions: number[][]): Deductio
 
   // Check each region
   regionCells.forEach((cells, regionId) => {
-    if (cells.length >= 5) {  // Only check regions that would need 2 stars
+    if (cells.length >= 4) {  // Check regions that could affect line constraints
       // Check if all cells are in one row
       const uniqueRows = new Set(cells.map(c => c.row));
       const uniqueCols = new Set(cells.map(c => c.col));
@@ -384,8 +384,11 @@ const findSingleLineRegions = (cells: number[][], regions: number[][]): Deductio
         const affectedCells: Position[] = [];
         for (let i = 0; i < 10; i++) {
           const pos = line !== null ? { row: line, col: i } : { row: i, col: col! };
-          if (regions[pos.row][pos.col] !== regionId && cells?.[pos.row]?.[pos.col] === 0) {
-            affectedCells.push(pos);
+          // Only add cells that are in the same line but not in our region and are empty
+          if (pos.row >= 0 && pos.row < 10 && pos.col >= 0 && pos.col < 10) {
+            if (regions[pos.row][pos.col] !== regionId && cells[pos.row][pos.col] === 0) {
+              affectedCells.push(pos);
+            }
           }
         }
         
