@@ -30,8 +30,12 @@ const STORAGE_KEY = 'star-battle-puzzles';
 
 const initialState: GridState = {
   cells: Array(10).fill(null).map(() => Array(10).fill(0)),
-  horizontal: Array(11).fill(null).map(() => Array(10).fill(false)),
-  vertical: Array(10).fill(null).map(() => Array(11).fill(false))
+  horizontal: Array(11).fill(null).map((_, i) => 
+    Array(10).fill(i === 0 || i === 10 ? true : false)
+  ),
+  vertical: Array(10).fill(null).map(() => 
+    Array(11).fill(false).map((_, i) => i === 0 || i === 10 ? true : false)
+  )
 };
 
 const loadSavedPuzzles = (): SavedPuzzle[] => {
