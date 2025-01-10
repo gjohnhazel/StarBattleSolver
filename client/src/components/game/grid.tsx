@@ -11,6 +11,7 @@ export function Grid({ mode }: GridProps) {
   const { boundaries, stars, xMarks, toggleBoundary, toggleCell } = useGameState();
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [touchStart, setTouchStart] = useState<Position | null>(null);
+  const [touchHighlight, setTouchHighlight] = useState<Position | null>(null);
 
   // Handle resize
   useEffect(() => {
@@ -34,6 +35,8 @@ export function Grid({ mode }: GridProps) {
     const x = Math.floor(((touch.clientX - rect.left) / size.width) * 10);
     const y = Math.floor(((touch.clientY - rect.top) / size.height) * 10);
 
+    setTouchHighlight({ x, y });
+
     if (mode === 'draw') {
       setTouchStart({ x, y });
     } else {
@@ -41,8 +44,22 @@ export function Grid({ mode }: GridProps) {
     }
   };
 
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStart) return;
+
+    e.preventDefault();
+    const touch = e.touches[0];
+    const rect = svgRef.current!.getBoundingClientRect();
+    const x = Math.floor(((touch.clientX - rect.left) / size.width) * 10);
+    const y = Math.floor(((touch.clientY - rect.top) / size.height) * 10);
+
+    setTouchHighlight({ x, y });
+  };
+
   const handleTouchEnd = (e: React.TouchEvent) => {
     e.preventDefault();
+    setTouchHighlight(null);
+
     if (mode === 'draw' && touchStart && svgRef.current) {
       const touch = e.changedTouches[0];
       const rect = svgRef.current.getBoundingClientRect();
@@ -86,10 +103,30 @@ export function Grid({ mode }: GridProps) {
         width="100%"
         height="100%"
         viewBox={`0 0 ${size.width} ${size.height}`}
-        className="touch-none bg-gray-100"
+        className="touch-none bg-gray-100 rounded-lg"
         onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
+        {/* Grid cells for touch targets */}
+        {Array.from({ length: 100 }).map((_, i) => {
+          const x = Math.floor(i / 10);
+          const y = i % 10;
+          return (
+            <rect
+              key={`cell-${i}`}
+              x={x * cellSize}
+              y={y * cellSize}
+              width={cellSize}
+              height={cellSize}
+              fill="transparent"
+              className={touchHighlight && touchHighlight.x === x && touchHighlight.y === y 
+                ? 'fill-primary/20 transition-colors duration-200'
+                : ''}
+            />
+          );
+        })}
+
         {/* Grid lines */}
         {Array.from({ length: 11 }).map((_, i) => (
           <g key={i}>
@@ -124,7 +161,7 @@ export function Grid({ mode }: GridProps) {
             y2={boundary.y2 * cellSize}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
-            className={`${mode === 'solve' ? 'drop-shadow-md' : ''}`}
+            className={`${mode === 'solve' ? 'drop-shadow-md' : ''} transition-all duration-200`}
           />
         ))}
 
@@ -138,6 +175,7 @@ export function Grid({ mode }: GridProps) {
             dominantBaseline="middle"
             fill="black"
             fontSize={cellSize * 0.6}
+            className="transition-all duration-200"
           >
             ★
           </text>
@@ -152,6 +190,7 @@ export function Grid({ mode }: GridProps) {
             dominantBaseline="middle"
             fill="red"
             fontSize={cellSize * 0.6}
+            className="transition-all duration-200"
           >
             ×
           </text>
