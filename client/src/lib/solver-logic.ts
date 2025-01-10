@@ -356,83 +356,6 @@ const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
   return deductions;
 };
 
-const findSingleLineRegions = (cells: number[][], regions: number[][]): Deduction[] => {
-  const deductions: Deduction[] = [];
-  
-  // Get cells in each region
-  const regionCells: Position[][] = [];
-  for (let i = 0; i < 10; i++) {
-    for (let j = 0; j < 10; j++) {
-      const regionId = regions[i][j];
-      if (!regionCells[regionId]) regionCells[regionId] = [];
-      regionCells[regionId].push({ row: i, col: j });
-    }
-  }
-
-  // Check each region
-  regionCells.forEach((cells, regionId) => {
-    if (cells.length >= 2) {
-      // Check if all cells are in the same row
-      const uniqueRows = new Set(cells.map(pos => pos.row));
-      if (uniqueRows.size === 1) {
-        const row = cells[0].row;
-        const emptyCells: Position[] = [];
-        
-        // Find cells in same row but different regions
-        for (let j = 0; j < 10; j++) {
-          if (regions[row][j] !== regionId && cells[row][j] === 0) {
-            emptyCells.push({ row, col: j });
-          }
-        }
-
-        if (emptyCells.length > 0) {
-          deductions.push({
-            type: 'pattern',
-            description: `Region ${regionId} single row constraint`,
-            explanation: `Since region ${regionId} is contained entirely within row ${row + 1}, it must contain both stars for that row. Other cells in this row must be empty.`,
-            affected: emptyCells,
-            apply: () => {
-              const { toggleCell } = useGameState.getState();
-              emptyCells.forEach(pos => toggleCell(pos.row, pos.col, 'empty'));
-            },
-            certainty: 'definite'
-          });
-        }
-      }
-
-      // Check if all cells are in the same column
-      const uniqueCols = new Set(cells.map(pos => pos.col));
-      if (uniqueCols.size === 1) {
-        const col = cells[0].col;
-        const emptyCells: Position[] = [];
-        
-        // Find cells in same column but different regions
-        for (let i = 0; i < 10; i++) {
-          if (regions[i][col] !== regionId && cells[i][col] === 0) {
-            emptyCells.push({ row: i, col });
-          }
-        }
-
-        if (emptyCells.length > 0) {
-          deductions.push({
-            type: 'pattern',
-            description: `Region ${regionId} single column constraint`,
-            explanation: `Since region ${regionId} is contained entirely within column ${col + 1}, it must contain both stars for that column. Other cells in this column must be empty.`,
-            affected: emptyCells,
-            apply: () => {
-              const { toggleCell } = useGameState.getState();
-              emptyCells.forEach(pos => toggleCell(pos.row, pos.col, 'empty'));
-            },
-            certainty: 'definite'
-          });
-        }
-      }
-    }
-  });
-
-  return deductions;
-};
-
 const analyzeRegions = (cells: number[][], horizontal: boolean[][], vertical: boolean[][]): Deduction[] => {
   const deductions: Deduction[] = [];
   const regions = findRegions(horizontal, vertical);
@@ -567,7 +490,6 @@ export const useSolver = create<SolverState>((set, get) => ({
       ...findBasicDeductions(cells),
       ...findSandwichPatterns(cells, regions),
       ...findLockedSets(cells, regions),
-      ...findSingleLineRegions(cells, regions),
       ...findMultiUnitConstraints(cells, regions),
       ...findSquareRegions(cells, regions),
       ...findTShapedRegions(cells, regions),
