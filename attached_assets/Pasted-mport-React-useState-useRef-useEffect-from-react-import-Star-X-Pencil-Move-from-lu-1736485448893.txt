@@ -1,0 +1,198 @@
+mport React, { useState, useRef, useEffect } from 'react';
+import { Star, X, Pencil, Move } from 'lucide-react';
+
+const StarBattleGame = () => {
+  const [gridState, setGridState] = useState(
+    Array(10).fill().map(() => Array(10).fill(0))
+  );
+  const [boundaries, setBoundaries] = useState({
+    horizontal: Array(11).fill().map(() => Array(10).fill(false)),
+    vertical: Array(10).fill().map(() => Array(11).fill(false))
+  });
+  const [isDrawMode, setIsDrawMode] = useState(false);
+  
+  const lastTapRef = useRef(null);
+  const doubleTapTimeoutRef = useRef(null);
+
+  const handleCellTap = (row, col) => {
+    if (isDrawMode) return;
+    
+    const now = Date.now();
+    if (lastTapRef.current && (now - lastTapRef.current) < 300) {
+      setGridState(prev => {
+        const newState = prev.map(r => [...r]);
+        newState[row][col] = newState[row][col] === 1 ? 0 : 1;
+        return newState;
+      });
+      clearTimeout(doubleTapTimeoutRef.current);
+      lastTapRef.current = null;
+    } else {
+      lastTapRef.current = now;
+      clearTimeout(doubleTapTimeoutRef.current);
+      
+      doubleTapTimeoutRef.current = setTimeout(() => {
+        setGridState(prev => {
+          const newState = prev.map(r => [...r]);
+          newState[row][col] = newState[row][col] === 2 ? 0 : 2;
+          return newState;
+        });
+        lastTapRef.current = null;
+      }, 300);
+    }
+  };
+
+  const handleEdgeSelect = (type, row, col) => {
+    if (!isDrawMode) return;
+    
+    setBoundaries(prev => {
+      const newBoundaries = {
+        horizontal: [...prev.horizontal.map(row => [...row])],
+        vertical: [...prev.vertical.map(row => [...row])]
+      };
+      newBoundaries[type][row][col] = !prev[type][row][col];
+      return newBoundaries;
+    });
+  };
+
+  return (
+    <div className="w-full max-w-2xl mx-auto p-4">
+      {/* Mode Toggle */}
+      <div className="mb-4 flex gap-2">
+        <button
+          onClick={() => setIsDrawMode(false)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg 
+            ${!isDrawMode ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+        >
+          <Move className="w-4 h-4" />
+          Solve Mode
+        </button>
+        <button
+          onClick={() => setIsDrawMode(true)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg
+            ${isDrawMode ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+        >
+          <Pencil className="w-4 h-4" />
+          Draw Mode
+        </button>
+      </div>
+
+      {/* Grid */}
+      <div className="aspect-square w-full relative">
+        <div className="grid grid-cols-10 absolute inset-0">
+          {gridState.map((row, rowIndex) => (
+            row.map((cell, colIndex) => (
+              <div
+                key={`cell-${rowIndex}-${colIndex}`}
+                className={`relative border border-gray-200 touch-manipulation
+                  ${isDrawMode ? 'bg-gray-50' : ''}`}
+                onClick={() => !isDrawMode && handleCellTap(rowIndex, colIndex)}
+              >
+                {/* Boundary drawing areas */}
+                {isDrawMode && (
+                  <>
+                    <div
+                      className="absolute top-0 left-0 right-0 h-4 -translate-y-2
+                        bg-gray-200 bg-opacity-50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdgeSelect('horizontal', rowIndex, colIndex);
+                      }}
+                    />
+                    <div
+                      className="absolute bottom-0 left-0 right-0 h-4 translate-y-2
+                        bg-gray-200 bg-opacity-50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdgeSelect('horizontal', rowIndex + 1, colIndex);
+                      }}
+                    />
+                    <div
+                      className="absolute top-0 left-0 bottom-0 w-4 -translate-x-2
+                        bg-gray-200 bg-opacity-50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdgeSelect('vertical', rowIndex, colIndex);
+                      }}
+                    />
+                    <div
+                      className="absolute top-0 right-0 bottom-0 w-4 translate-x-2
+                        bg-gray-200 bg-opacity-50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdgeSelect('vertical', rowIndex, colIndex + 1);
+                      }}
+                    />
+                  </>
+                )}
+
+                {/* Cell content */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {cell === 1 && <Star className="w-6 h-6 text-blue-600" />}
+                  {cell === 2 && <X className="w-6 h-6 text-red-600" />}
+                </div>
+              </div>
+            ))
+          ))}
+        </div>
+
+        {/* Boundary lines */}
+        <div className="absolute inset-0 pointer-events-none">
+          {boundaries.horizontal.map((row, rowIndex) => (
+            row.map((isActive, colIndex) => (
+              isActive && (
+                <div
+                  key={`h-${rowIndex}-${colIndex}`}
+                  className={`absolute h-0.5 ${isDrawMode ? 'bg-gray-800' : 'bg-white shadow-sm'}`}
+                  style={{
+                    left: `${(colIndex / 10) * 100}%`,
+                    top: `${(rowIndex / 10) * 100}%`,
+                    width: `${100 / 10}%`,
+                    boxShadow: !isDrawMode ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'
+                  }}
+                />
+              )
+            ))
+          ))}
+          {boundaries.vertical.map((row, rowIndex) => (
+            row.map((isActive, colIndex) => (
+              isActive && (
+                <div
+                  key={`v-${rowIndex}-${colIndex}`}
+                  className={`absolute w-0.5 ${isDrawMode ? 'bg-gray-800' : 'bg-white shadow-sm'}`}
+                  style={{
+                    left: `${(colIndex / 10) * 100}%`,
+                    top: `${(rowIndex / 10) * 100}%`,
+                    height: `${100 / 10}%`,
+                    boxShadow: !isDrawMode ? '1px 0 2px rgba(0,0,0,0.1)' : 'none'
+                  }}
+                />
+              )
+            ))
+          ))}
+        </div>
+      </div>
+
+      {/* Instructions */}
+      <div className="mt-4 space-y-2">
+        {isDrawMode ? (
+          <div className="text-sm text-gray-600">
+            Tap the spaces between cells to draw region boundaries
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              <X className="w-6 h-6 text-red-600" />
+              <span>Single tap to place/remove X</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Star className="w-6 h-6 text-blue-600" />
+              <span>Double tap to place/remove star</span>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default StarBattleGame;

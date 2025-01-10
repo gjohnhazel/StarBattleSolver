@@ -1,197 +1,104 @@
 import { useRef, useEffect, useState } from 'react';
 import { useGameState } from '@/lib/game-state';
-import type { Position, Boundary } from '@/lib/game-state';
 
 interface GridProps {
   mode: 'draw' | 'solve';
 }
 
 export function Grid({ mode }: GridProps) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const { boundaries, stars, xMarks, toggleBoundary, toggleCell } = useGameState();
-  const [size, setSize] = useState({ width: 0, height: 0 });
-  const [touchStart, setTouchStart] = useState<Position | null>(null);
-  const [touchHighlight, setTouchHighlight] = useState<Position | null>(null);
-  const [lastTapTime, setLastTapTime] = useState<number>(0);
-  const [lastTapPosition, setLastTapPosition] = useState<Position | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const { gridState, toggleHorizontalBoundary, toggleVerticalBoundary, toggleCell } = useGameState();
+  const [touchStart, setTouchStart] = useState<{ x: number, y: number } | null>(null);
+  const [lastTap, setLastTap] = useState<{ time: number, row: number, col: number } | null>(null);
 
-  // Handle resize
-  useEffect(() => {
-    const updateSize = () => {
-      if (svgRef.current) {
-        const width = svgRef.current.clientWidth;
-        setSize({ width, height: width }); // Keep square aspect ratio
-      }
-    };
-
-    updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
-  }, []);
-
-  // Touch handling
-  const handleTouchStart = (e: React.TouchEvent) => {
-    e.preventDefault();
-    const touch = e.touches[0];
-    const rect = svgRef.current!.getBoundingClientRect();
-    const x = Math.floor(((touch.clientX - rect.left) / size.width) * 10);
-    const y = Math.floor(((touch.clientY - rect.top) / size.height) * 10);
-
-    setTouchHighlight({ x, y });
-
+  const handleBoundaryTap = (
+    event: React.TouchEvent,
+    type: 'horizontal' | 'vertical',
+    row: number,
+    col: number
+  ) => {
+    event.stopPropagation();
     if (mode === 'draw') {
-      setTouchStart({ x, y });
-    } else {
-      // Handle tap in solve mode
-      const now = Date.now();
-      const doubleTapDelay = 300; // ms
-
-      if (lastTapPosition && 
-          lastTapPosition.x === x && 
-          lastTapPosition.y === y && 
-          (now - lastTapTime) < doubleTapDelay) {
-        // Double tap - place/remove star
-        toggleCell(x, y, 'star');
-        setLastTapTime(0);
-        setLastTapPosition(null);
+      if (type === 'horizontal') {
+        toggleHorizontalBoundary(row, col);
       } else {
-        // First tap - place/remove X
-        toggleCell(x, y, 'x');
-        setLastTapTime(now);
-        setLastTapPosition({ x, y });
+        toggleVerticalBoundary(row, col);
       }
     }
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!touchStart || mode !== 'draw') return;
+  const handleCellTap = (row: number, col: number) => {
+    if (mode !== 'solve') return;
 
-    e.preventDefault();
-    const touch = e.touches[0];
-    const rect = svgRef.current!.getBoundingClientRect();
-    const x = Math.floor(((touch.clientX - rect.left) / size.width) * 10);
-    const y = Math.floor(((touch.clientY - rect.top) / size.height) * 10);
-
-    setTouchHighlight({ x, y });
-
-    // Only create boundary if moved to an adjacent cell
-    if ((Math.abs(x - touchStart.x) === 1 && y === touchStart.y) ||
-        (Math.abs(y - touchStart.y) === 1 && x === touchStart.x)) {
-      toggleBoundary(touchStart.x, touchStart.y, x, y);
-      setTouchStart({ x, y }); // Update start position for continuous drawing
+    const now = Date.now();
+    if (lastTap && 
+        lastTap.row === row && 
+        lastTap.col === col && 
+        now - lastTap.time < 300) {
+      // Double tap - place/remove star
+      toggleCell(row, col, 'star');
+      setLastTap(null);
+    } else {
+      // Single tap - place/remove X
+      toggleCell(row, col, 'x');
+      setLastTap({ time: now, row, col });
     }
   };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    e.preventDefault();
-    setTouchHighlight(null);
-    setTouchStart(null);
-  };
-
-  const cellSize = size.width / 10;
-  const strokeWidth = mode === 'draw' ? 2 : 3;
-  const strokeColor = mode === 'draw' ? '#000' : '#fff';
 
   return (
-    <div className="relative aspect-square w-full">
-      <svg 
-        ref={svgRef}
-        width="100%"
-        height="100%"
-        viewBox={`0 0 ${size.width} ${size.height}`}
-        className="touch-none bg-gray-100 rounded-lg"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {/* Grid cells for touch targets */}
-        {Array.from({ length: 100 }).map((_, i) => {
-          const x = Math.floor(i / 10);
-          const y = i % 10;
-          return (
-            <rect
-              key={`cell-${i}`}
-              x={x * cellSize}
-              y={y * cellSize}
-              width={cellSize}
-              height={cellSize}
-              fill="transparent"
-              className={touchHighlight && touchHighlight.x === x && touchHighlight.y === y 
-                ? 'fill-primary/20 transition-colors duration-200'
-                : ''}
-            />
-          );
-        })}
+    <div 
+      ref={gridRef}
+      className="relative aspect-square w-full bg-gray-100 rounded-lg overflow-hidden"
+    >
+      <div className="grid grid-cols-10 h-full w-full">
+        {gridState.cells.map((row, rowIndex) => (
+          row.map((cell, colIndex) => (
+            <div
+              key={`cell-${rowIndex}-${colIndex}`}
+              className="relative border border-gray-300"
+              onClick={() => handleCellTap(rowIndex, colIndex)}
+            >
+              {/* Boundary touch areas */}
+              {mode === 'draw' && (
+                <>
+                  <div
+                    className="absolute top-0 left-0 right-0 h-4 -translate-y-2
+                      bg-primary/10 hover:bg-primary/20 transition-colors"
+                    onTouchStart={(e) => handleBoundaryTap(e, 'horizontal', rowIndex, colIndex)}
+                  />
+                  <div
+                    className="absolute top-0 left-0 bottom-0 w-4 -translate-x-2
+                      bg-primary/10 hover:bg-primary/20 transition-colors"
+                    onTouchStart={(e) => handleBoundaryTap(e, 'vertical', rowIndex, colIndex)}
+                  />
+                </>
+              )}
 
-        {/* Grid lines */}
-        {Array.from({ length: 11 }).map((_, i) => (
-          <g key={i}>
-            <line
-              x1={i * cellSize}
-              y1={0}
-              x2={i * cellSize}
-              y2={size.height}
-              stroke={strokeColor}
-              strokeWidth={1}
-              className="opacity-30"
-            />
-            <line
-              x1={0}
-              y1={i * cellSize}
-              x2={size.width}
-              y2={i * cellSize}
-              stroke={strokeColor}
-              strokeWidth={1}
-              className="opacity-30"
-            />
-          </g>
-        ))}
+              {/* Cell content */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                {cell === 1 && (
+                  <span className="text-2xl text-black">★</span>
+                )}
+                {cell === 2 && (
+                  <span className="text-2xl text-red-600">×</span>
+                )}
+              </div>
 
-        {/* Boundaries */}
-        {boundaries.map((boundary: Boundary, i: number) => (
-          <line
-            key={i}
-            x1={boundary.x1 * cellSize}
-            y1={boundary.y1 * cellSize}
-            x2={boundary.x2 * cellSize}
-            y2={boundary.y2 * cellSize}
-            stroke={strokeColor}
-            strokeWidth={strokeWidth}
-            className={`${mode === 'solve' ? 'drop-shadow-md' : ''} transition-all duration-200`}
-          />
+              {/* Boundaries */}
+              {gridState.horizontal[rowIndex][colIndex] && (
+                <div className={`absolute top-0 left-0 right-0 h-0.5 
+                  ${mode === 'draw' ? 'bg-black' : 'bg-white shadow-md'}`}
+                />
+              )}
+              {gridState.vertical[rowIndex][colIndex] && (
+                <div className={`absolute top-0 left-0 bottom-0 w-0.5 
+                  ${mode === 'draw' ? 'bg-black' : 'bg-white shadow-md'}`}
+                />
+              )}
+            </div>
+          ))
         ))}
-
-        {/* Stars and X marks */}
-        {stars.map((pos: Position, i: number) => (
-          <text
-            key={`star-${i}`}
-            x={pos.x * cellSize + cellSize/2}
-            y={pos.y * cellSize + cellSize/2}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="black"
-            fontSize={cellSize * 0.6}
-            className="transition-all duration-200"
-          >
-            ★
-          </text>
-        ))}
-
-        {xMarks.map((pos: Position, i: number) => (
-          <text
-            key={`x-${i}`}
-            x={pos.x * cellSize + cellSize/2}
-            y={pos.y * cellSize + cellSize/2}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="red"
-            fontSize={cellSize * 0.6}
-            className="transition-all duration-200"
-          >
-            ×
-          </text>
-        ))}
-      </svg>
+      </div>
     </div>
   );
 }
