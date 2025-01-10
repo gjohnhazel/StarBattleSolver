@@ -493,6 +493,7 @@ export const useSolver = create<SolverState>((set, get) => ({
       ...findMultiUnitConstraints(cells, regions),
       ...findSquareRegions(cells, regions),
       ...findTShapedRegions(cells, regions),
+      ...findSingleLineRegions(cells, regions),
       ...analyzeRegions(cells, horizontal, vertical)
     ];
 
@@ -566,4 +567,63 @@ const findSixCellRectangles = (cells: number[][], regions: number[][]): Deductio
         }
     }
     return deductions;
+};
+
+const findSingleLineRegions = (cells: number[][], regions: number[][]): Deduction[] => {
+  const deductions: Deduction[] = [];
+  
+  // Get all cells in each region
+  const regionCells: Position[][] = [];
+  for (let i = 0; i < 10; i++) {
+    for (let j = 0; j < 10; j++) {
+      const regionId = regions[i][j];
+      if (!regionCells[regionId]) regionCells[regionId] = [];
+      regionCells[regionId].push({ row: i, col: j });
+    }
+  }
+
+  // Check each region
+  regionCells.forEach((cells, regionId) => {
+    // Check if all cells are in the same row
+    const sameRow = cells.every(cell => cell.row === cells[0].row);
+    const sameCol = cells.every(cell => cell.col === cells[0].col);
+
+    if (sameRow || sameCol) {
+      const affectedCells: Position[] = [];
+      
+      if (sameRow) {
+        const row = cells[0].row;
+        // Find cells in the same row that belong to other regions
+        for (let col = 0; col < 10; col++) {
+          if (regions[row][col] !== regionId && cells[row][col] === 0) {
+            affectedCells.push({ row, col });
+          }
+        }
+      } else if (sameCol) {
+        const col = cells[0].col;
+        // Find cells in the same column that belong to other regions
+        for (let row = 0; row < 10; row++) {
+          if (regions[row][col] !== regionId && cells[row][col] === 0) {
+            affectedCells.push({ row, col });
+          }
+        }
+      }
+
+      if (affectedCells.length > 0) {
+        deductions.push({
+          type: 'pattern',
+          description: `Single ${sameRow ? 'row' : 'column'} region constraint`,
+          explanation: `Since region ${regionId} occupies all positions in this ${sameRow ? 'row' : 'column'}, other cells in the same ${sameRow ? 'row' : 'column'} must be empty to maintain the two-stars-per-${sameRow ? 'row' : 'column'} rule.`,
+          affected: affectedCells,
+          apply: () => {
+            const { toggleCell } = useGameState.getState();
+            affectedCells.forEach(pos => toggleCell(pos.row, pos.col, 'empty'));
+          },
+          certainty: 'definite'
+        });
+      }
+    }
+  });
+
+  return deductions;
 };
