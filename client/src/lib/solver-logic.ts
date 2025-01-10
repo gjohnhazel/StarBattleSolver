@@ -19,9 +19,12 @@ interface Deduction {
 // Find all cells that share a unit (row, column, or region) with the given position
 const getRelatedCells = (pos: Position, regions: number[][]): Position[] => {
   const related: Position[] = [];
-  if (!regions?.[pos.row]?.[pos.col]) return related;
-  
+  if (!pos || !regions || pos.row < 0 || pos.row >= 10 || pos.col < 0 || pos.col >= 10) {
+    return related;
+  }
+
   const regionId = regions[pos.row][pos.col];
+  if (regionId === undefined) return related;
 
   for (let i = 0; i < 10; i++) {
     for (let j = 0; j < 10; j++) {
