@@ -296,55 +296,33 @@ const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
 
   regionCells.forEach((cells, regionId) => {
     if (cells.length === 4) {
-      // Find bounding box
-      const minRow = Math.min(...cells.map(c => c.row));
-      const maxRow = Math.max(...cells.map(c => c.row));
-      const minCol = Math.min(...cells.map(c => c.col));
-      const maxCol = Math.max(...cells.map(c => c.col));
+      // Count cells in each row and column
+      const rowCounts = new Map<number, number>();
+      const colCounts = new Map<number, number>();
+      cells.forEach(cell => {
+        rowCounts.set(cell.row, (rowCounts.get(cell.row) || 0) + 1);
+        colCounts.set(cell.col, (colCounts.get(cell.col) || 0) + 1);
+      });
 
-      // Check if it's a T shape (3x2 or 2x3 bounding box)
-      if ((maxRow - minRow === 2 && maxCol - minCol === 1) || 
-          (maxRow - minRow === 1 && maxCol - minCol === 2)) {
+      // Find the row with 3 cells (top of T) and column with 2 cells (stem of T)
+      const topRow = Array.from(rowCounts.entries()).find(([_, count]) => count === 3);
+      const stemCol = Array.from(colCounts.entries()).find(([_, count]) => count === 2);
 
-        // Find the center and bottom cells
-        const affectedCells: Position[] = [];
+      if (topRow && stemCol) {
+        // For a horizontal T (---), the middle cell of the top and the stem cell must be X'd
+        const middleCell = cells.find(c => c.row === topRow[0] && c.col === stemCol[0]);
+        const stemCell = cells.find(c => c.row !== topRow[0] && c.col === stemCol[0]);
 
-        // For vertical T
-        if (maxRow - minRow === 2 && maxCol - minCol === 1) {
-          // Center cell (middle of vertical line)
-          const centerPos = { row: minRow + 1, col: minCol };
-          // Bottom cell
-          const bottomPos = { row: maxRow, col: minCol };
-          if (cells.some(c => c.row === centerPos.row && c.col === centerPos.col)) {
-            affectedCells.push(centerPos);
-          }
-          if (cells.some(c => c.row === bottomPos.row && c.col === bottomPos.col)) {
-            affectedCells.push(bottomPos);
-          }
-        }
-        // For horizontal T (rotate 90° clockwise to identify "bottom")
-        else if (maxRow - minRow === 1 && maxCol - minCol === 2) {
-          // Center cell
-          const centerPos = { row: minRow, col: minCol + 1 };
-          // "Bottom" cell (rightmost cell when rotated)
-          const bottomPos = { row: minRow, col: maxCol };
-          if (cells.some(c => c.row === centerPos.row && c.col === centerPos.col)) {
-            affectedCells.push(centerPos);
-          }
-          if (cells.some(c => c.row === bottomPos.row && c.col === bottomPos.col)) {
-            affectedCells.push(bottomPos);
-          }
-        }
-
-        if (affectedCells.length > 0) {
+        if (middleCell && stemCell) {
           deductions.push({
             type: 'pattern',
             description: 'T-shaped region cells must be empty',
-            explanation: 'In a T-shaped region of 4 cells, the center and "bottom" cells cannot contain stars due to adjacency rules',
-            affected: affectedCells,
+            explanation: 'In a T-shaped region of 4 cells, the middle cell of the top and the stem cell must be empty to allow two stars to be placed',
+            affected: [middleCell, stemCell],
             apply: () => {
               const { toggleCell } = useGameState.getState();
-              affectedCells.forEach(pos => toggleCell(pos.row, pos.col, 'empty'));
+              toggleCell(middleCell.row, middleCell.col, 'empty');
+              toggleCell(stemCell.row, stemCell.col, 'empty');
             },
             certainty: 'definite'
           });
