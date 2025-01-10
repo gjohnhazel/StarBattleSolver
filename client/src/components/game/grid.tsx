@@ -12,6 +12,8 @@ export function Grid({ mode }: GridProps) {
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [touchStart, setTouchStart] = useState<Position | null>(null);
   const [touchHighlight, setTouchHighlight] = useState<Position | null>(null);
+  const [lastTapTime, setLastTapTime] = useState<number>(0);
+  const [lastTapPosition, setLastTapPosition] = useState<Position | null>(null);
 
   // Handle resize
   useEffect(() => {
@@ -40,12 +42,29 @@ export function Grid({ mode }: GridProps) {
     if (mode === 'draw') {
       setTouchStart({ x, y });
     } else {
-      handleTap(x, y);
+      // Handle tap in solve mode
+      const now = Date.now();
+      const doubleTapDelay = 300; // ms
+
+      if (lastTapPosition && 
+          lastTapPosition.x === x && 
+          lastTapPosition.y === y && 
+          (now - lastTapTime) < doubleTapDelay) {
+        // Double tap - place/remove star
+        toggleCell(x, y, 'star');
+        setLastTapTime(0);
+        setLastTapPosition(null);
+      } else {
+        // First tap - place/remove X
+        toggleCell(x, y, 'x');
+        setLastTapTime(now);
+        setLastTapPosition({ x, y });
+      }
     }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!touchStart) return;
+    if (!touchStart || mode !== 'draw') return;
 
     e.preventDefault();
     const touch = e.touches[0];
@@ -54,42 +73,19 @@ export function Grid({ mode }: GridProps) {
     const y = Math.floor(((touch.clientY - rect.top) / size.height) * 10);
 
     setTouchHighlight({ x, y });
+
+    // Only create boundary if moved to an adjacent cell
+    if ((Math.abs(x - touchStart.x) === 1 && y === touchStart.y) ||
+        (Math.abs(y - touchStart.y) === 1 && x === touchStart.x)) {
+      toggleBoundary(touchStart.x, touchStart.y, x, y);
+      setTouchStart({ x, y }); // Update start position for continuous drawing
+    }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     e.preventDefault();
     setTouchHighlight(null);
-
-    if (mode === 'draw' && touchStart && svgRef.current) {
-      const touch = e.changedTouches[0];
-      const rect = svgRef.current.getBoundingClientRect();
-      const endX = Math.floor(((touch.clientX - rect.left) / size.width) * 10);
-      const endY = Math.floor(((touch.clientY - rect.top) / size.height) * 10);
-
-      // Only create boundary if the end point is different and adjacent
-      if ((Math.abs(endX - touchStart.x) === 1 && endY === touchStart.y) ||
-          (Math.abs(endY - touchStart.y) === 1 && endX === touchStart.x)) {
-        toggleBoundary(touchStart.x, touchStart.y, endX, endY);
-      }
-      setTouchStart(null);
-    }
-  };
-
-  // Double tap detection for stars
-  let lastTap = 0;
-  const handleTap = (x: number, y: number) => {
-    const now = Date.now();
-    const doubleTapDelay = 300;
-
-    if (lastTap && (now - lastTap) < doubleTapDelay) {
-      // Double tap - place/remove star
-      toggleCell(x, y, 'star');
-    } else {
-      // Single tap - place/remove X
-      toggleCell(x, y, 'x');
-    }
-
-    lastTap = now;
+    setTouchStart(null);
   };
 
   const cellSize = size.width / 10;
