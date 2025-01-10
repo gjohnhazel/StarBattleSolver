@@ -304,14 +304,27 @@ const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
         colCounts.set(cell.col, (colCounts.get(cell.col) || 0) + 1);
       });
 
-      // Find the row with 3 cells (top of T) and column with 2 cells (stem of T)
-      const topRow = Array.from(rowCounts.entries()).find(([_, count]) => count === 3);
-      const stemCol = Array.from(colCounts.entries()).find(([_, count]) => count === 2);
+      // Check for both vertical and horizontal T shapes
+      const row3 = Array.from(rowCounts.entries()).find(([_, count]) => count === 3);
+      const col3 = Array.from(colCounts.entries()).find(([_, count]) => count === 3);
+      const row2 = Array.from(rowCounts.entries()).find(([_, count]) => count === 2);
+      const col2 = Array.from(colCounts.entries()).find(([_, count]) => count === 2);
 
-      if (topRow && stemCol) {
-        // For a horizontal T (---), the middle cell of the top and the stem cell must be X'd
-        const middleCell = cells.find(c => c.row === topRow[0] && c.col === stemCol[0]);
-        const stemCell = cells.find(c => c.row !== topRow[0] && c.col === stemCol[0]);
+      let middleCell = null;
+      let stemCell = null;
+
+      // Vertical T (stem points down)
+      if (row3 && col2) {
+        middleCell = cells.find(c => c.row === row3[0] && c.col === col2[0]);
+        stemCell = cells.find(c => c.row !== row3[0] && c.col === col2[0]);
+      }
+      // Horizontal T (stem points right/left)
+      else if (col3 && row2) {
+        middleCell = cells.find(c => c.row === row2[0] && c.col === col3[0]);
+        stemCell = cells.find(c => c.row === row2[0] && c.col !== col3[0]);
+      }
+
+      if (middleCell && stemCell) {
 
         if (middleCell && stemCell) {
           deductions.push({
