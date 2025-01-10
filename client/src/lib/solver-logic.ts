@@ -343,21 +343,18 @@ const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
       }
 
       if (middleCell && stemCell) {
-
-        if (middleCell && stemCell) {
-          deductions.push({
-            type: 'pattern',
-            description: 'T-shaped region cells must be empty',
-            explanation: 'In a T-shaped region of 4 cells, the middle cell of the top and the stem cell must be empty to allow two stars to be placed',
-            affected: [middleCell, stemCell],
-            apply: () => {
-              const { toggleCell } = useGameState.getState();
-              toggleCell(middleCell.row, middleCell.col, 'empty');
-              toggleCell(stemCell.row, stemCell.col, 'empty');
-            },
-            certainty: 'definite'
-          });
-        }
+        deductions.push({
+          type: 'pattern',
+          description: `T-shaped region ${regionId + 1} cells must be empty`,
+          explanation: 'In a T-shaped region of 4 cells, the middle cell of the top and the stem cell must be empty to allow two stars to be placed',
+          affected: [middleCell, stemCell],
+          apply: () => {
+            const { toggleCell } = useGameState.getState();
+            toggleCell(middleCell.row, middleCell.col, 'empty');
+            toggleCell(stemCell.row, stemCell.col, 'empty');
+          },
+          certainty: 'definite'
+        });
       }
     }
   });
@@ -568,7 +565,7 @@ const findSixCellRectangles = (cells: number[][], regions: number[][]): Deductio
 
                 deductions.push({
                     type: 'pattern',
-                    description: '6-cell rectangle region center cells must be empty',
+                    description: `6-cell rectangle region ${regionId + 1} center cells must be empty`,
                     explanation: 'In a 6-cell rectangle region, the center cells cannot contain stars since this would prevent placing two stars in the region (stars cannot be adjacent). The remaining positions would not allow two stars to be placed.',
                     affected: validCenterCells,
                     apply: () => {
