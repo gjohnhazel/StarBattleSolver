@@ -281,6 +281,81 @@ const findSquareRegions = (cells: number[][], regions: number[][]): Deduction[] 
   return deductions;
 };
 
+const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[] => {
+  const deductions: Deduction[] = [];
+  
+  // Get all cells in each region
+  const regionCells: Position[][] = [];
+  for (let i = 0; i < 10; i++) {
+    for (let j = 0; j < 10; j++) {
+      const regionId = regions[i][j];
+      if (!regionCells[regionId]) regionCells[regionId] = [];
+      regionCells[regionId].push({ row: i, col: j });
+    }
+  }
+
+  regionCells.forEach((cells, regionId) => {
+    if (cells.length === 4) {
+      // Find bounding box
+      const minRow = Math.min(...cells.map(c => c.row));
+      const maxRow = Math.max(...cells.map(c => c.row));
+      const minCol = Math.min(...cells.map(c => c.col));
+      const maxCol = Math.max(...cells.map(c => c.col));
+      
+      // Check if it's a T shape (3x2 or 2x3 bounding box)
+      if ((maxRow - minRow === 2 && maxCol - minCol === 1) || 
+          (maxRow - minRow === 1 && maxCol - minCol === 2)) {
+        
+        // Find the center and bottom cells
+        const affectedCells: Position[] = [];
+        
+        // For vertical T
+        if (maxRow - minRow === 2 && maxCol - minCol === 1) {
+          // Center cell (middle of vertical line)
+          const centerPos = { row: minRow + 1, col: minCol };
+          // Bottom cell
+          const bottomPos = { row: maxRow, col: minCol };
+          if (cells.some(c => c.row === centerPos.row && c.col === centerPos.col)) {
+            affectedCells.push(centerPos);
+          }
+          if (cells.some(c => c.row === bottomPos.row && c.col === bottomPos.col)) {
+            affectedCells.push(bottomPos);
+          }
+        }
+        // For horizontal T (rotate 90° clockwise to identify "bottom")
+        else if (maxRow - minRow === 1 && maxCol - minCol === 2) {
+          // Center cell
+          const centerPos = { row: minRow, col: minCol + 1 };
+          // "Bottom" cell (rightmost cell when rotated)
+          const bottomPos = { row: minRow, col: maxCol };
+          if (cells.some(c => c.row === centerPos.row && c.col === centerPos.col)) {
+            affectedCells.push(centerPos);
+          }
+          if (cells.some(c => c.row === bottomPos.row && c.col === bottomPos.col)) {
+            affectedCells.push(bottomPos);
+          }
+        }
+
+        if (affectedCells.length > 0) {
+          deductions.push({
+            type: 'pattern',
+            description: 'T-shaped region cells must be empty',
+            explanation: 'In a T-shaped region of 4 cells, the center and "bottom" cells cannot contain stars due to adjacency rules',
+            affected: affectedCells,
+            apply: () => {
+              const { toggleCell } = useGameState.getState();
+              affectedCells.forEach(pos => toggleCell(pos.row, pos.col, 'empty'));
+            },
+            certainty: 'definite'
+          });
+        }
+      }
+    }
+  });
+
+  return deductions;
+};
+
 const analyzeRegions = (cells: number[][], horizontal: boolean[][], vertical: boolean[][]): Deduction[] => {
   const deductions: Deduction[] = [];
   const regions = findRegions(horizontal, vertical);
@@ -417,6 +492,7 @@ export const useSolver = create<SolverState>((set, get) => ({
       ...findLockedSets(cells, regions),
       ...findMultiUnitConstraints(cells, regions),
       ...findSquareRegions(cells, regions),
+      ...findTShapedRegions(cells, regions),
       ...analyzeRegions(cells, horizontal, vertical)
     ];
 
