@@ -18,7 +18,7 @@ interface GameState {
   toggleHorizontalBoundary: (row: number, col: number) => void;
   toggleVerticalBoundary: (row: number, col: number) => void;
   toggleCell: (row: number, col: number, type: 'star' | 'x') => void;
-  reset: () => void;
+  reset: (preserveBoundaries?: boolean) => void;
   validateGrid: () => boolean;
   savePuzzle: () => SavedPuzzle;
   loadPuzzle: (id: string) => void;
@@ -94,26 +94,32 @@ export const useGameState = create<GameState>((set, get) => ({
     }));
   },
 
-  reset: () => {
-    set({ gridState: initialState });
+  reset: (preserveBoundaries = false) => {
+    if (preserveBoundaries) {
+      set(state => ({
+        gridState: {
+          ...state.gridState,
+          cells: Array(10).fill(null).map(() => Array(10).fill(0))
+        }
+      }));
+    } else {
+      set({ gridState: initialState });
+    }
   },
 
   validateGrid: () => {
     const { gridState } = get();
     const { cells } = gridState;
 
-    // Check rows and columns
     for (let i = 0; i < 10; i++) {
       const rowStars = cells[i].filter(cell => cell === 1).length;
       const colStars = cells.map(row => row[i]).filter(cell => cell === 1).length;
       if (rowStars !== 2 || colStars !== 2) return false;
     }
 
-    // Check adjacent stars
     for (let i = 0; i < 10; i++) {
       for (let j = 0; j < 10; j++) {
         if (cells[i][j] === 1) {
-          // Check all 8 adjacent cells
           for (let di = -1; di <= 1; di++) {
             for (let dj = -1; dj <= 1; dj++) {
               if (di === 0 && dj === 0) continue;
@@ -157,7 +163,7 @@ export const useGameState = create<GameState>((set, get) => ({
   loadMostRecent: () => {
     const puzzles = loadSavedPuzzles();
     if (puzzles.length > 0) {
-      const mostRecent = puzzles.reduce((prev, current) => 
+      const mostRecent = puzzles.reduce((prev, current) =>
         prev.timestamp > current.timestamp ? prev : current
       );
       get().loadPuzzle(mostRecent.id);

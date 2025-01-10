@@ -27,11 +27,16 @@ export function Controls({ mode, onShowHints }: ControlsProps) {
     });
   };
 
+  const handleReset = () => {
+    // Preserve boundaries only in solve mode
+    reset(mode === 'solve');
+  };
+
   return (
     <div className="flex gap-2 mt-4">
       <Button 
         variant="outline" 
-        onClick={reset}
+        onClick={handleReset}
         className="flex-1"
       >
         <RotateCcw className="w-4 h-4 mr-2" />
