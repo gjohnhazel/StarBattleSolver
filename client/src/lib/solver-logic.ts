@@ -186,11 +186,19 @@ const findRegions = (horizontal: boolean[][], vertical: boolean[][]): number[][]
     if (row < 0 || row >= 10 || col < 0 || col >= 10 || grid[row][col] !== -1) return;
     grid[row][col] = id;
 
-    // Check all four directions and only flood fill if there's NO boundary
-    if (row > 0 && !horizontal[row][col]) floodFill(row - 1, col, id);     // Up
-    if (row < 9 && !horizontal[row + 1][col]) floodFill(row + 1, col, id); // Down
-    if (col > 0 && !vertical[row][col]) floodFill(row, col - 1, id);       // Left
-    if (col < 9 && !vertical[row][col + 1]) floodFill(row, col + 1, id);   // Right
+    // Check all four directions - only flood if there's no boundary
+    if (row > 0 && !horizontal[row][col]) {
+      floodFill(row - 1, col, id);     // Up
+    }
+    if (row < 9 && !horizontal[row + 1][col]) {
+      floodFill(row + 1, col, id);     // Down
+    }
+    if (col > 0 && !vertical[row][col]) {
+      floodFill(row, col - 1, id);     // Left
+    }
+    if (col < 9 && !vertical[row][col + 1]) {
+      floodFill(row, col + 1, id);     // Right
+    }
   };
 
   // Find all regions using flood fill
@@ -202,6 +210,16 @@ const findRegions = (horizontal: boolean[][], vertical: boolean[][]): number[][]
       }
     }
   }
+
+  // Debug: Log region counts
+  const regionCounts = new Array(regionId).fill(0);
+  for (let i = 0; i < 10; i++) {
+    for (let j = 0; j < 10; j++) {
+      regionCounts[grid[i][j]]++;
+    }
+  }
+  console.log('Regions detected:', regionId);
+  console.log('Cells per region:', regionCounts);
 
   // Verify regions are properly separated
   const regionSizes = new Array(regionId).fill(0);
