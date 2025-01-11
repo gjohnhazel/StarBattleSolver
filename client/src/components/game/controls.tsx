@@ -41,7 +41,7 @@ export function Controls({ mode, onShowHints }: ControlsProps) {
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
+    <div className="flex flex-wrap gap-2 mt-4">
       <Button 
         variant="outline" 
         onClick={handleReset}
