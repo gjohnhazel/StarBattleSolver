@@ -372,13 +372,30 @@ const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
           }
         }
       if (middleCell && stemCell) {
+        // Find the cells between the middle and stem
+        const betweenCells = cells.filter(cell => {
+          if (middleCell.row === stemCell.row) {
+            // Horizontal T - mark cells above and below the connecting segment
+            return (cell.col > Math.min(middleCell.col, stemCell.col) && 
+                   cell.col < Math.max(middleCell.col, stemCell.col) &&
+                   (cell.row === middleCell.row - 1 || cell.row === middleCell.row + 1));
+          } else if (middleCell.col === stemCell.col) {
+            // Vertical T - mark cells left and right of the connecting segment
+            return (cell.row > Math.min(middleCell.row, stemCell.row) && 
+                   cell.row < Math.max(middleCell.row, stemCell.row) &&
+                   (cell.col === middleCell.col - 1 || cell.col === middleCell.col + 1));
+          }
+          return false;
+        });
+
         deductions.push({
           type: 'pattern',
-          description: `T-shaped region ${regionId + 1} requires stars`,
-          explanation: 'In a T-shaped region of 4 cells, the middle cell and stem cell must contain stars to satisfy region requirements',
-          affected: [middleCell, stemCell],
+          description: `T-shaped region ${regionId + 1} placement pattern`,
+          explanation: 'In a T-shaped region of 4 cells, stars must be placed at opposite corners with empty spaces between them',
+          affected: [...betweenCells, middleCell, stemCell],
           apply: () => {
             const { toggleCell } = useGameState.getState();
+            betweenCells.forEach(pos => toggleCell(pos.row, pos.col, 'empty'));
             toggleCell(middleCell.row, middleCell.col, 'star');
             toggleCell(stemCell.row, stemCell.col, 'star');
           },
