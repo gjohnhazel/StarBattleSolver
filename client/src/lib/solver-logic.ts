@@ -57,6 +57,58 @@ const findSandwichPatterns = (cells: number[][], regions: number[][]): Deduction
       }
 
       if (possiblePositions.length === 1) {
+
+const findLShapedRegions = (cells: number[][], regions: number[][]): Deduction[] => {
+  const deductions: Deduction[] = [];
+  const regionCells: Position[][] = [];
+  
+  // Group cells by region
+  for (let i = 0; i < 10; i++) {
+    for (let j = 0; j < 10; j++) {
+      const regionId = regions[i][j];
+      if (!regionCells[regionId]) regionCells[regionId] = [];
+      regionCells[regionId].push({ row: i, col: j });
+    }
+  }
+
+  regionCells.forEach((cells, regionId) => {
+    if (cells.length === 4) {
+      // Find bounding box
+      const minRow = Math.min(...cells.map(c => c.row));
+      const maxRow = Math.max(...cells.map(c => c.row));
+      const minCol = Math.min(...cells.map(c => c.col));
+      const maxCol = Math.max(...cells.map(c => c.col));
+
+      // Check if it's an L shape (3x2 or 2x3 with one corner missing)
+      if ((maxRow - minRow === 2 && maxCol - minCol === 1) || 
+          (maxRow - minRow === 1 && maxCol - minCol === 2)) {
+        // Find the end cell of the long side
+        const endCell = cells.find(cell => 
+          (maxRow - minRow === 2 && cell.row === maxRow) ||
+          (maxCol - minCol === 2 && cell.col === maxCol)
+        );
+        
+        if (endCell) {
+          deductions.push({
+            type: 'pattern',
+            description: `L-shaped region ${regionId + 1} must have a star at the end`,
+            explanation: 'In a 4-cell L-shaped region, the end cell of the long side must contain a star to allow placing two stars without adjacency',
+            affected: [endCell],
+            apply: () => {
+              const { toggleCell } = useGameState.getState();
+              toggleCell(endCell.row, endCell.col, 'star');
+            },
+            certainty: 'definite',
+            isApplied: false
+          });
+        }
+      }
+    }
+  });
+
+  return deductions;
+};
+
         deductions.push({
           type: 'pattern',
           description: `Sandwich pattern in row ${i + 1}`,
@@ -649,56 +701,7 @@ const findSingleLineRegions = (cells: number[][], regions: number[][]): Deductio
       const col = cellsInRegion[0].col;
       const affectedCells: Position[] = [];
 
-const findLShapedRegions = (cells: number[][], regions: number[][]): Deduction[] => {
-  const deductions: Deduction[] = [];
-  const regionCells: Position[][] = [];
-  
-  // Group cells by region
-  for (let i = 0; i < 10; i++) {
-    for (let j = 0; j < 10; j++) {
-      const regionId = regions[i][j];
-      if (!regionCells[regionId]) regionCells[regionId] = [];
-      regionCells[regionId].push({ row: i, col: j });
-    }
-  }
 
-  regionCells.forEach((cells, regionId) => {
-    if (cells.length === 4) {
-      // Find bounding box
-      const minRow = Math.min(...cells.map(c => c.row));
-      const maxRow = Math.max(...cells.map(c => c.row));
-      const minCol = Math.min(...cells.map(c => c.col));
-      const maxCol = Math.max(...cells.map(c => c.col));
-
-      // Check if it's an L shape (3x2 or 2x3 with one corner missing)
-      if ((maxRow - minRow === 2 && maxCol - minCol === 1) || 
-          (maxRow - minRow === 1 && maxCol - minCol === 2)) {
-        // Find the end cell of the long side
-        const endCell = cells.find(cell => 
-          (maxRow - minRow === 2 && cell.row === maxRow) ||
-          (maxCol - minCol === 2 && cell.col === maxCol)
-        );
-        
-        if (endCell) {
-          deductions.push({
-            type: 'pattern',
-            description: `L-shaped region ${regionId + 1} must have a star at the end`,
-            explanation: 'In a 4-cell L-shaped region, the end cell of the long side must contain a star to allow placing two stars without adjacency',
-            affected: [endCell],
-            apply: () => {
-              const { toggleCell } = useGameState.getState();
-              toggleCell(endCell.row, endCell.col, 'star');
-            },
-            certainty: 'definite',
-            isApplied: false
-          });
-        }
-      }
-    }
-  });
-
-  return deductions;
-};
 
 
       // Find cells in same column but different region
