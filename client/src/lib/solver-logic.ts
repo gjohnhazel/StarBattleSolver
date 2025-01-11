@@ -641,21 +641,42 @@ const findLShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
     const minCol = Math.min(...cells.map(c => c.col));
     const maxCol = Math.max(...cells.map(c => c.col));
 
-    // Check if region forms an L-shape
-    const isLShaped = (maxRow - minRow === 2 && maxCol - minCol === 1) || 
-                     (maxRow - minRow === 1 && maxCol - minCol === 2);
+    // Check if region forms an L-shape by analyzing cell distribution
+    let isLShaped = false;
+    let cornerCell: Position | null = null;
+    let edgeCell: Position | null = null;
 
-    if (isLShaped) {
-      // Find the edge cell of the long side
-      let edgeCell: Position | null = null;
-      
-      if (maxRow - minRow === 2) { // Vertical long side
-        const hasTopCell = cells.some(c => c.row === minRow && c.col === minCol);
-        edgeCell = cells.find(c => c.row === (hasTopCell ? maxRow : minRow));
-      } else { // Horizontal long side
-        const hasLeftCell = cells.some(c => c.row === minRow && c.col === minCol);
-        edgeCell = cells.find(c => c.col === (hasLeftCell ? maxCol : minCol));
+    if (maxRow - minRow === 2 && maxCol - minCol === 1) {
+      // Check vertical L
+      for (const col of [minCol, maxCol]) {
+        const colCells = cells.filter(c => c.col === col);
+        if (colCells.length === 3) { // Found long side
+          const otherCol = col === minCol ? maxCol : minCol;
+          const shortSideCells = cells.filter(c => c.col === otherCol);
+          if (shortSideCells.length === 1) {
+            isLShaped = true;
+            cornerCell = colCells.find(c => c.row === shortSideCells[0].row);
+            edgeCell = colCells.find(c => c.row === (shortSideCells[0].row === minRow ? maxRow : minRow));
+          }
+        }
       }
+    } else if (maxRow - minRow === 1 && maxCol - minCol === 2) {
+      // Check horizontal L
+      for (const row of [minRow, maxRow]) {
+        const rowCells = cells.filter(c => c.row === row);
+        if (rowCells.length === 3) { // Found long side
+          const otherRow = row === minRow ? maxRow : minRow;
+          const shortSideCells = cells.filter(c => c.row === otherRow);
+          if (shortSideCells.length === 1) {
+            isLShaped = true;
+            cornerCell = rowCells.find(c => c.col === shortSideCells[0].col);
+            edgeCell = rowCells.find(c => c.col === (shortSideCells[0].col === minCol ? maxCol : minCol));
+          }
+        }
+      }
+    }
+
+    if (isLShaped && edgeCell) {
 
       if (edgeCell) {
         deductions.push({
