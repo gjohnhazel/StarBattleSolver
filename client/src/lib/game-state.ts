@@ -86,16 +86,40 @@ export const useGameState = create<GameState>((set, get) => ({
   },
 
   toggleCell: (row: number, col: number, type: 'star' | 'x') => {
-    set(state => ({
-      gridState: {
-        ...state.gridState,
-        cells: state.gridState.cells.map((r, i) =>
-          i === row ? r.map((v, j) =>
-            j === col ? (v === (type === 'star' ? 1 : 2) ? 0 : (type === 'star' ? 1 : 2)) : v
-          ) : r
-        )
+    set(state => {
+      const newCells = state.gridState.cells.map(row => [...row]);
+      
+      if (type === 'star') {
+        // Toggle star
+        const isPlacingStar = newCells[row][col] !== 1;
+        newCells[row][col] = isPlacingStar ? 1 : 0;
+        
+        // If placing a star, add X's around it
+        if (isPlacingStar) {
+          for (let di = -1; di <= 1; di++) {
+            for (let dj = -1; dj <= 1; dj++) {
+              if (di === 0 && dj === 0) continue;
+              const ni = row + di, nj = col + dj;
+              if (ni >= 0 && ni < 10 && nj >= 0 && nj < 10) {
+                if (newCells[ni][nj] === 0) {
+                  newCells[ni][nj] = 2; // Add X
+                }
+              }
+            }
+          }
+        }
+      } else {
+        // Toggle X normally
+        newCells[row][col] = newCells[row][col] === 2 ? 0 : 2;
       }
-    }));
+      
+      return {
+        gridState: {
+          ...state.gridState,
+          cells: newCells
+        }
+      };
+    });
   },
 
   reset: (preserveBoundaries = false) => {
