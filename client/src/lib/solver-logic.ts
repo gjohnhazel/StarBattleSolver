@@ -374,13 +374,13 @@ const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
       if (middleCell && stemCell) {
         deductions.push({
           type: 'pattern',
-          description: `T-shaped region ${regionId + 1} cells must be empty`,
-          explanation: 'In a T-shaped region of 4 cells, the middle cell of the top and the stem cell must be empty to allow two stars to be placed',
+          description: `T-shaped region ${regionId + 1} requires stars`,
+          explanation: 'In a T-shaped region of 4 cells, the middle cell and stem cell must contain stars to satisfy region requirements',
           affected: [middleCell, stemCell],
           apply: () => {
             const { toggleCell } = useGameState.getState();
-            toggleCell(middleCell.row, middleCell.col, 'empty');
-            toggleCell(stemCell.row, stemCell.col, 'empty');
+            toggleCell(middleCell.row, middleCell.col, 'star');
+            toggleCell(stemCell.row, stemCell.col, 'star');
           },
           certainty: 'definite',
           isApplied: false
