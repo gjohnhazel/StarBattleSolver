@@ -40,8 +40,28 @@ export function Controls({ mode, onShowHints }: ControlsProps) {
     reset(mode === 'solve');
   };
 
+  const handleSaveToExamples = () => {
+    if (mode === 'draw') {
+      const { gridState } = useGameState.getState();
+      const newPuzzle = saveCustomPuzzle(gridState);
+      toast({
+        title: "Success",
+        description: `Saved as "${newPuzzle.name}" in examples.`,
+      });
+    }
+  };
+
   return (
     <div className="flex flex-wrap gap-2 mt-4">
+      {mode === 'draw' && (
+        <Button 
+          variant="outline" 
+          onClick={handleSaveToExamples}
+        >
+          <BookOpen className="w-4 h-4 mr-2" />
+          Save to Examples
+        </Button>
+      )}
       <Button 
         variant="outline" 
         onClick={handleReset}

@@ -32,4 +32,16 @@ const puzzle2: ExamplePuzzle = {
   }
 };
 
-export const examplePuzzles: ExamplePuzzle[] = [puzzle1, puzzle2];
+export let examplePuzzles: ExamplePuzzle[] = [puzzle1, puzzle2];
+
+export const saveCustomPuzzle = (gridState: GridState) => {
+  const newPuzzle: ExamplePuzzle = {
+    id: `custom${Date.now()}`,
+    name: `Custom Puzzle ${examplePuzzles.length + 1}`,
+    difficulty: 'medium',
+    gridState: gridState
+  };
+  
+  examplePuzzles = [...examplePuzzles, newPuzzle];
+  return newPuzzle;
+};
