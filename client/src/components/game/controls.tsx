@@ -41,11 +41,10 @@ export function Controls({ mode, onShowHints }: ControlsProps) {
   };
 
   return (
-    <div className="flex gap-2 mt-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
       <Button 
         variant="outline" 
         onClick={handleReset}
-        className="flex-1"
       >
         <RotateCcw className="w-4 h-4 mr-2" />
         Reset
@@ -53,7 +52,7 @@ export function Controls({ mode, onShowHints }: ControlsProps) {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="flex-1">
+          <Button variant="outline">
             <BookOpen className="w-4 h-4 mr-2" />
             Load Example
           </Button>
