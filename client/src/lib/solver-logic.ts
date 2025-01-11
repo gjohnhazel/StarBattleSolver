@@ -319,34 +319,37 @@ const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
       let middleCell = null;
       let stemCell = null;
 
-      // Check for vertical T (stem points down)
-      if (maxRow - minRow === 2 && maxCol - minCol === 2) {
-        const topRow = cells.filter(c => c.row === minRow);
-        const middleRowCells = cells.filter(c => c.row === minRow + 1);
-        const bottomCell = cells.find(c => c.row === maxRow);
+      // First check if it could be a T shape based on cell distribution
+      const rowCounts = Array.from(rowCounts.values());
+      const colCounts = Array.from(colCounts.values());
+      
+      // A T-shape should have either:
+      // - Two rows with 1 cell and one row with 2 cells, or
+      // - Two columns with 1 cell and one column with 2 cells
+      const isVerticalT = rowCounts.filter(c => c === 1).length === 2 && rowCounts.filter(c => c === 2).length === 1;
+      const isHorizontalT = colCounts.filter(c => c === 1).length === 2 && colCounts.filter(c => c === 2).length === 1;
 
-        if (topRow.length === 3 && middleRowCells.length === 1 && bottomCell) {
-          const middleTop = topRow.find(c => c.col === middleRowCells[0].col);
-          if (middleTop && bottomCell.col === middleRowCells[0].col) {
-            middleCell = middleTop;
-            stemCell = bottomCell;
+      if (isVerticalT) {
+        const middleRow = Array.from(rowCounts.entries()).find(([_, count]) => count === 2)?.[0];
+        if (middleRow !== undefined) {
+          const stem = cells.find(c => c.row !== middleRow);
+          const bar = cells.filter(c => c.row === middleRow);
+          if (stem && bar.length === 2) {
+            middleCell = bar.find(c => c.col === stem.col);
+            stemCell = stem;
           }
         }
-
-        // Check for T pointing up
-        const bottomRow = cells.filter(c => c.row === maxRow);
-        const topCell = cells.find(c => c.row === minRow);
-
-        if (bottomRow.length === 3 && middleRowCells.length === 1 && topCell) {
-          const middleBottom = bottomRow.find(c => c.col === middleRowCells[0].col);
-          if (middleBottom && topCell.col === middleRowCells[0].col) {
-            middleCell = middleBottom;
-            stemCell = topCell;
+      } else if (isHorizontalT) {
+        const middleCol = Array.from(colCounts.entries()).find(([_, count]) => count === 2)?.[0];
+        if (middleCol !== undefined) {
+          const stem = cells.find(c => c.col !== middleCol);
+          const bar = cells.filter(c => c.col === middleCol);
+          if (stem && bar.length === 2) {
+            middleCell = bar.find(c => c.row === stem.row);
+            stemCell = stem;
           }
         }
       }
-      // Check for horizontal T (stem points right or left)
-      else if (maxRow - minRow === 1 && maxCol - minCol === 2) {
         const leftCol = cells.filter(c => c.col === minCol);
         const middleColCells = cells.filter(c => c.col === minCol + 1);
         const rightColCells = cells.filter(c => c.col === maxCol);
