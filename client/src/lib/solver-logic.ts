@@ -510,6 +510,7 @@ export const useSolver = create<SolverState>((set, get) => ({
       ...findMultiUnitConstraints(cells, regions),
       ...findSquareRegions(cells, regions),
       ...findTShapedRegions(cells, regions),
+      ...findLShapedRegions(cells, regions),
       ...findSingleLineRegions(cells, regions),
       ...analyzeRegions(cells, horizontal, vertical)
     ];
@@ -587,6 +588,66 @@ const findSixCellRectangles = (cells: number[][], regions: number[][]): Deductio
                         });
                     },
                     certainty: 'definite',
+
+const findLShapedRegions = (cells: number[][], regions: number[][]): Deduction[] => {
+  const deductions: Deduction[] = [];
+  
+  // Get all cells in each region
+  const regionCells: Position[][] = [];
+  for (let i = 0; i < 10; i++) {
+    for (let j = 0; j < 10; j++) {
+      const regionId = regions[i][j];
+      if (!regionCells[regionId]) regionCells[regionId] = [];
+      regionCells[regionId].push({ row: i, col: j });
+    }
+  }
+
+  regionCells.forEach((cells, regionId) => {
+    // Only process 4-cell regions
+    if (cells.length !== 4) return;
+
+    // Find bounding box
+    const minRow = Math.min(...cells.map(c => c.row));
+    const maxRow = Math.max(...cells.map(c => c.row));
+    const minCol = Math.min(...cells.map(c => c.col));
+    const maxCol = Math.max(...cells.map(c => c.col));
+
+    // Check if region forms an L-shape
+    const isLShaped = (maxRow - minRow === 2 && maxCol - minCol === 1) || 
+                     (maxRow - minRow === 1 && maxCol - minCol === 2);
+
+    if (isLShaped) {
+      // Find the edge cell of the long side
+      let edgeCell: Position | null = null;
+      
+      if (maxRow - minRow === 2) { // Vertical long side
+        const hasTopCell = cells.some(c => c.row === minRow && c.col === minCol);
+        edgeCell = cells.find(c => c.row === (hasTopCell ? maxRow : minRow));
+      } else { // Horizontal long side
+        const hasLeftCell = cells.some(c => c.row === minRow && c.col === minCol);
+        edgeCell = cells.find(c => c.col === (hasLeftCell ? maxCol : minCol));
+      }
+
+      if (edgeCell) {
+        deductions.push({
+          type: 'pattern',
+          description: `L-shaped region ${regionId + 1} edge cell must contain a star`,
+          explanation: 'In a 4-cell L-shaped region, the edge cell of the long side must contain a star to allow placement of another star without violating adjacency rules',
+          affected: [edgeCell],
+          apply: () => {
+            const { toggleCell } = useGameState.getState();
+            toggleCell(edgeCell!.row, edgeCell!.col, 'star');
+          },
+          certainty: 'definite',
+          isApplied: false
+        });
+      }
+    }
+  });
+
+  return deductions;
+};
+
                     isApplied: false
                 });
             }
