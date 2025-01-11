@@ -649,14 +649,6 @@ const findSingleLineRegions = (cells: number[][], regions: number[][]): Deductio
       const col = cellsInRegion[0].col;
       const affectedCells: Position[] = [];
 
-      // Find cells in same column but different region
-      for (let row = 0; row < 10; row++) {
-        if (regions[row][col] !== regionId && cells[row][col] === 0) {
-          affectedCells.push({ row, col });
-        }
-      }
-
-
 const findLShapedRegions = (cells: number[][], regions: number[][]): Deduction[] => {
   const deductions: Deduction[] = [];
   const regionCells: Position[][] = [];
@@ -708,7 +700,16 @@ const findLShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
   return deductions;
 };
 
-      if (affectedCells.length > 0) {
+
+      // Find cells in same column but different region
+      for (let row = 0; row < 10; row++) {
+        if (regions[row][col] !== regionId && cells[row][col] === 0) {
+          affectedCells.push({ row, col });
+        }
+      }
+
+
+if (affectedCells.length > 0) {
         deductions.push({
           type: 'pattern',
           description: `Region contained in column ${col + 1}`,
