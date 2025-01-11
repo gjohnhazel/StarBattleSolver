@@ -320,14 +320,14 @@ const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
       let stemCell = null;
 
       // First check if it could be a T shape based on cell distribution
-      const rowCounts = Array.from(rowCounts.values());
-      const colCounts = Array.from(colCounts.values());
+      const rowCountArray = Array.from(rowCounts.values());
+      const colCountArray = Array.from(colCounts.values());
       
       // A T-shape should have either:
       // - Two rows with 1 cell and one row with 2 cells, or
       // - Two columns with 1 cell and one column with 2 cells
-      const isVerticalT = rowCounts.filter(c => c === 1).length === 2 && rowCounts.filter(c => c === 2).length === 1;
-      const isHorizontalT = colCounts.filter(c => c === 1).length === 2 && colCounts.filter(c => c === 2).length === 1;
+      const isVerticalT = rowCountArray.filter(c => c === 1).length === 2 && rowCountArray.filter(c => c === 2).length === 1;
+      const isHorizontalT = colCountArray.filter(c => c === 1).length === 2 && colCountArray.filter(c => c === 2).length === 1;
 
       if (isVerticalT) {
         const middleRow = Array.from(rowCounts.entries()).find(([_, count]) => count === 2)?.[0];
@@ -371,8 +371,6 @@ const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
             stemCell = leftCol[0];
           }
         }
-      }
-
       if (middleCell && stemCell) {
         deductions.push({
           type: 'pattern',
