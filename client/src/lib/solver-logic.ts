@@ -663,7 +663,6 @@ const findLShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
     return deductions;
 };
 
-
 const findSingleLineRegions = (cells: number[][], regions: number[][]): Deduction[] => {
   const deductions: Deduction[] = [];
 
