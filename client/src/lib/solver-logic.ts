@@ -588,6 +588,13 @@ const findSixCellRectangles = (cells: number[][], regions: number[][]): Deductio
                         });
                     },
                     certainty: 'definite',
+                    isApplied: false
+                });
+            }
+        }
+    }
+    return deductions;
+};
 
 const findLShapedRegions = (cells: number[][], regions: number[][]): Deduction[] => {
   const deductions: Deduction[] = [];
