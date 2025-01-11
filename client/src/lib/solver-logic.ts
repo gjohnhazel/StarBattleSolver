@@ -332,18 +332,40 @@ const findTShapedRegions = (cells: number[][], regions: number[][]): Deduction[]
             stemCell = bottomCell;
           }
         }
+
+        // Check for T pointing up
+        const bottomRow = cells.filter(c => c.row === maxRow);
+        const topCell = cells.find(c => c.row === minRow);
+
+        if (bottomRow.length === 3 && middleRowCells.length === 1 && topCell) {
+          const middleBottom = bottomRow.find(c => c.col === middleRowCells[0].col);
+          if (middleBottom && topCell.col === middleRowCells[0].col) {
+            middleCell = middleBottom;
+            stemCell = topCell;
+          }
+        }
       }
-      // Check for horizontal T (stem points right)
+      // Check for horizontal T (stem points right or left)
       else if (maxRow - minRow === 1 && maxCol - minCol === 2) {
         const leftCol = cells.filter(c => c.col === minCol);
         const middleColCells = cells.filter(c => c.col === minCol + 1);
-        const rightCell = cells.find(c => c.col === maxCol);
+        const rightColCells = cells.filter(c => c.col === maxCol);
 
-        if (leftCol.length === 3 && middleColCells.length === 1 && rightCell) {
+        // Check for T pointing right
+        if (leftCol.length === 3 && middleColCells.length === 1 && rightColCells.length === 1) {
           const middleLeft = leftCol.find(c => c.row === middleColCells[0].row);
-          if (middleLeft && rightCell.row === middleColCells[0].row) {
+          if (middleLeft && rightColCells[0].row === middleColCells[0].row) {
             middleCell = middleLeft;
-            stemCell = rightCell;
+            stemCell = rightColCells[0];
+          }
+        }
+
+        // Check for T pointing left
+        if (rightColCells.length === 3 && middleColCells.length === 1 && leftCol.length === 1) {
+          const middleRight = rightColCells.find(c => c.row === middleColCells[0].row);
+          if (middleRight && leftCol[0].row === middleColCells[0].row) {
+            middleCell = middleRight;
+            stemCell = leftCol[0];
           }
         }
       }
