@@ -25,7 +25,10 @@ export function Grid({ mode }: GridProps) {
     }
   }, []);
 
-  const handleBoundaryTap = (
+  const [isDragging, setIsDragging] = useState(false);
+  const [lastDrawnBoundary, setLastDrawnBoundary] = useState<{type: 'horizontal' | 'vertical', row: number, col: number} | null>(null);
+
+  const handleBoundaryTouchStart = (
     event: React.TouchEvent,
     type: 'horizontal' | 'vertical',
     row: number,
@@ -33,12 +36,49 @@ export function Grid({ mode }: GridProps) {
   ) => {
     event.stopPropagation();
     if (mode === 'draw') {
+      setIsDragging(true);
       if (type === 'horizontal') {
         toggleHorizontalBoundary(row, col);
       } else {
         toggleVerticalBoundary(row, col);
       }
+      setLastDrawnBoundary({ type, row, col });
     }
+  };
+
+  const handleBoundaryTouchMove = (event: React.TouchEvent) => {
+    if (!isDragging || mode !== 'draw') return;
+    
+    const touch = event.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    if (element?.classList.contains('boundary-hitbox')) {
+      const [type, row, col] = element.getAttribute('data-boundary')?.split('-') || [];
+      if (type && row && col) {
+        const newBoundary = {
+          type: type as 'horizontal' | 'vertical',
+          row: parseInt(row),
+          col: parseInt(col)
+        };
+        
+        if (!lastDrawnBoundary || 
+            newBoundary.type !== lastDrawnBoundary.type || 
+            newBoundary.row !== lastDrawnBoundary.row || 
+            newBoundary.col !== lastDrawnBoundary.col) {
+          if (type === 'horizontal') {
+            toggleHorizontalBoundary(parseInt(row), parseInt(col));
+          } else {
+            toggleVerticalBoundary(parseInt(row), parseInt(col));
+          }
+          setLastDrawnBoundary(newBoundary);
+        }
+      }
+    }
+  };
+
+  const handleBoundaryTouchEnd = () => {
+    setIsDragging(false);
+    setLastDrawnBoundary(null);
   };
 
   const handleCellTap = (row: number, col: number) => {
@@ -91,36 +131,36 @@ export function Grid({ mode }: GridProps) {
               {mode === 'draw' && (
                 <>
                   <div
-                    className="absolute top-0 left-0 right-0 h-4 -translate-y-2
+                    className="boundary-hitbox absolute top-0 left-0 right-0 h-4 -translate-y-2
                       bg-gray-200 bg-opacity-50 hover:bg-opacity-75 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleBoundaryTap(e as any, 'horizontal', rowIndex, colIndex);
-                    }}
+                    data-boundary={`horizontal-${rowIndex}-${colIndex}`}
+                    onTouchStart={(e) => handleBoundaryTouchStart(e, 'horizontal', rowIndex, colIndex)}
+                    onTouchMove={handleBoundaryTouchMove}
+                    onTouchEnd={handleBoundaryTouchEnd}
                   />
                   <div
-                    className="absolute bottom-0 left-0 right-0 h-4 translate-y-2
+                    className="boundary-hitbox absolute bottom-0 left-0 right-0 h-4 translate-y-2
                       bg-gray-200 bg-opacity-50 hover:bg-opacity-75 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleBoundaryTap(e as any, 'horizontal', rowIndex + 1, colIndex);
-                    }}
+                    data-boundary={`horizontal-${rowIndex + 1}-${colIndex}`}
+                    onTouchStart={(e) => handleBoundaryTouchStart(e, 'horizontal', rowIndex + 1, colIndex)}
+                    onTouchMove={handleBoundaryTouchMove}
+                    onTouchEnd={handleBoundaryTouchEnd}
                   />
                   <div
-                    className="absolute top-0 left-0 bottom-0 w-4 -translate-x-2
+                    className="boundary-hitbox absolute top-0 left-0 bottom-0 w-4 -translate-x-2
                       bg-gray-200 bg-opacity-50 hover:bg-opacity-75 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleBoundaryTap(e as any, 'vertical', rowIndex, colIndex);
-                    }}
+                    data-boundary={`vertical-${rowIndex}-${colIndex}`}
+                    onTouchStart={(e) => handleBoundaryTouchStart(e, 'vertical', rowIndex, colIndex)}
+                    onTouchMove={handleBoundaryTouchMove}
+                    onTouchEnd={handleBoundaryTouchEnd}
                   />
                   <div
-                    className="absolute top-0 right-0 bottom-0 w-4 translate-x-2
+                    className="boundary-hitbox absolute top-0 right-0 bottom-0 w-4 translate-x-2
                       bg-gray-200 bg-opacity-50 hover:bg-opacity-75 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleBoundaryTap(e as any, 'vertical', rowIndex, colIndex + 1);
-                    }}
+                    data-boundary={`vertical-${rowIndex}-${colIndex + 1}`}
+                    onTouchStart={(e) => handleBoundaryTouchStart(e, 'vertical', rowIndex, colIndex + 1)}
+                    onTouchMove={handleBoundaryTouchMove}
+                    onTouchEnd={handleBoundaryTouchEnd}
                   />
                 </>
               )}
