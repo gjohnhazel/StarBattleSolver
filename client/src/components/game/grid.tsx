@@ -26,7 +26,12 @@ export function Grid({ mode }: GridProps) {
   }, []);
 
   const [isDragging, setIsDragging] = useState(false);
-  const [lastDrawnBoundary, setLastDrawnBoundary] = useState<{type: 'horizontal' | 'vertical', row: number, col: number} | null>(null);
+  const [lastDrawnBoundary, setLastDrawnBoundary] = useState<{
+    type: 'horizontal' | 'vertical', 
+    row: number, 
+    col: number,
+    time?: number
+  } | null>(null);
 
   const handleBoundaryTouchStart = (
     event: React.TouchEvent,
@@ -48,12 +53,19 @@ export function Grid({ mode }: GridProps) {
 
   const handleBoundaryTouchMove = (event: React.TouchEvent) => {
     if (!isDragging || mode !== 'draw') return;
+    event.preventDefault(); // Prevent scrolling while drawing
     
     const touch = event.touches[0];
-    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    const radius = 20; // Detection radius in pixels
+    const elements = document.elementsFromPoint(touch.clientX, touch.clientY);
     
-    if (element?.classList.contains('boundary-hitbox')) {
-      const [type, row, col] = element.getAttribute('data-boundary')?.split('-') || [];
+    // Find the closest boundary hitbox
+    const boundaryElement = elements.find(el => 
+      el instanceof HTMLElement && el.classList.contains('boundary-hitbox')
+    ) as HTMLElement | undefined;
+    
+    if (boundaryElement) {
+      const [type, row, col] = boundaryElement.getAttribute('data-boundary')?.split('-') || [];
       if (type && row && col) {
         const newBoundary = {
           type: type as 'horizontal' | 'vertical',
@@ -61,16 +73,22 @@ export function Grid({ mode }: GridProps) {
           col: parseInt(col)
         };
         
+        // Only toggle if we've moved to a different boundary
         if (!lastDrawnBoundary || 
             newBoundary.type !== lastDrawnBoundary.type || 
             newBoundary.row !== lastDrawnBoundary.row || 
             newBoundary.col !== lastDrawnBoundary.col) {
-          if (type === 'horizontal') {
-            toggleHorizontalBoundary(parseInt(row), parseInt(col));
-          } else {
-            toggleVerticalBoundary(parseInt(row), parseInt(col));
+          
+          // Add debouncing to prevent rapid toggling
+          const now = Date.now();
+          if (!lastDrawnBoundary || now - (lastDrawnBoundary.time || 0) > 50) {
+            if (type === 'horizontal') {
+              toggleHorizontalBoundary(parseInt(row), parseInt(col));
+            } else {
+              toggleVerticalBoundary(parseInt(row), parseInt(col));
+            }
+            setLastDrawnBoundary({...newBoundary, time: now});
           }
-          setLastDrawnBoundary(newBoundary);
         }
       }
     }
@@ -131,7 +149,7 @@ export function Grid({ mode }: GridProps) {
               {mode === 'draw' && (
                 <>
                   <div
-                    className="boundary-hitbox absolute top-0 left-0 right-0 h-4 -translate-y-2
+                    className="boundary-hitbox absolute top-0 left-0 right-0 h-6 -translate-y-3
                       bg-gray-200 bg-opacity-50 hover:bg-opacity-75 transition-colors"
                     data-boundary={`horizontal-${rowIndex}-${colIndex}`}
                     onTouchStart={(e) => handleBoundaryTouchStart(e, 'horizontal', rowIndex, colIndex)}
@@ -139,7 +157,7 @@ export function Grid({ mode }: GridProps) {
                     onTouchEnd={handleBoundaryTouchEnd}
                   />
                   <div
-                    className="boundary-hitbox absolute bottom-0 left-0 right-0 h-4 translate-y-2
+                    className="boundary-hitbox absolute bottom-0 left-0 right-0 h-6 translate-y-3
                       bg-gray-200 bg-opacity-50 hover:bg-opacity-75 transition-colors"
                     data-boundary={`horizontal-${rowIndex + 1}-${colIndex}`}
                     onTouchStart={(e) => handleBoundaryTouchStart(e, 'horizontal', rowIndex + 1, colIndex)}
@@ -147,7 +165,7 @@ export function Grid({ mode }: GridProps) {
                     onTouchEnd={handleBoundaryTouchEnd}
                   />
                   <div
-                    className="boundary-hitbox absolute top-0 left-0 bottom-0 w-4 -translate-x-2
+                    className="boundary-hitbox absolute top-0 left-0 bottom-0 w-6 -translate-x-3
                       bg-gray-200 bg-opacity-50 hover:bg-opacity-75 transition-colors"
                     data-boundary={`vertical-${rowIndex}-${colIndex}`}
                     onTouchStart={(e) => handleBoundaryTouchStart(e, 'vertical', rowIndex, colIndex)}
@@ -155,7 +173,7 @@ export function Grid({ mode }: GridProps) {
                     onTouchEnd={handleBoundaryTouchEnd}
                   />
                   <div
-                    className="boundary-hitbox absolute top-0 right-0 bottom-0 w-4 translate-x-2
+                    className="boundary-hitbox absolute top-0 right-0 bottom-0 w-6 translate-x-3
                       bg-gray-200 bg-opacity-50 hover:bg-opacity-75 transition-colors"
                     data-boundary={`vertical-${rowIndex}-${colIndex + 1}`}
                     onTouchStart={(e) => handleBoundaryTouchStart(e, 'vertical', rowIndex, colIndex + 1)}
