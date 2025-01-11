@@ -4,8 +4,16 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   Lightbulb,
   RotateCcw,
-  Check
+  Check,
+  BookOpen
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { examplePuzzles } from "@/lib/example-puzzles";
 
 interface ControlsProps {
   mode: 'draw' | 'solve';
@@ -13,7 +21,7 @@ interface ControlsProps {
 }
 
 export function Controls({ mode, onShowHints }: ControlsProps) {
-  const { reset, validateGrid } = useGameState();
+  const { reset, validateGrid, loadExamplePuzzle } = useGameState();
   const { toast } = useToast();
 
   const handleValidate = () => {
@@ -42,6 +50,26 @@ export function Controls({ mode, onShowHints }: ControlsProps) {
         <RotateCcw className="w-4 h-4 mr-2" />
         Reset
       </Button>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="flex-1">
+            <BookOpen className="w-4 h-4 mr-2" />
+            Load Example
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          {examplePuzzles.map((puzzle) => (
+            <DropdownMenuItem
+              key={puzzle.id}
+              onClick={() => loadExamplePuzzle(puzzle)}
+            >
+              {puzzle.name}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
 
       {mode === 'solve' && (
         <>
