@@ -62,7 +62,7 @@ export function Controls({ mode, onShowHints }: ControlsProps) {
           {examplePuzzles.map((puzzle) => (
             <DropdownMenuItem
               key={puzzle.id}
-              onClick={() => loadExamplePuzzle(puzzle)}
+              onClick={() => loadExamplePuzzle(puzzle.id)}
             >
               {puzzle.name}
             </DropdownMenuItem>
