@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { examplePuzzles } from "@/lib/example-puzzles";
+import { examplePuzzles, saveCustomPuzzle } from "@/lib/example-puzzles";
 
 interface ControlsProps {
   mode: 'draw' | 'solve';
