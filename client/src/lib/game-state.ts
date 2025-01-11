@@ -24,6 +24,7 @@ interface GameState {
   loadPuzzle: (id: string) => void;
   loadMostRecent: () => void;
   getAllSavedPuzzles: () => SavedPuzzle[];
+  loadExamplePuzzle: (puzzleId: string) => void;
 }
 
 const STORAGE_KEY = 'star-battle-puzzles';
@@ -59,6 +60,8 @@ const savePuzzlesToStorage = (puzzles: SavedPuzzle[]) => {
     console.error('Error saving puzzles:', error);
   }
 };
+
+import { examplePuzzles } from './example-puzzles';
 
 export const useGameState = create<GameState>((set, get) => ({
   gridState: initialState,
@@ -200,5 +203,12 @@ export const useGameState = create<GameState>((set, get) => ({
 
   getAllSavedPuzzles: () => {
     return loadSavedPuzzles();
+  },
+
+  loadExamplePuzzle: (puzzleId: string) => {
+    const puzzle = examplePuzzles.find(p => p.id === puzzleId);
+    if (puzzle) {
+      set({ gridState: puzzle.gridState });
+    }
   }
 }));

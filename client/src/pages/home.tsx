@@ -33,7 +33,7 @@ export default function Home() {
           </div>
 
           <Grid mode={mode} />
-          
+
           <Controls mode={mode} onShowHints={() => setShowHints(true)} />
         </Card>
 
