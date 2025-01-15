@@ -3,6 +3,8 @@
 
 An interactive web application for creating and solving Star Battle puzzles. This project provides both puzzle creation and solving modes, along with an intelligent hint system to help users learn solving strategies.
 
+You can test the app [here](https://star-battle-solver.replit.app/)
+
 ## Features
 
 - **Draw Mode**: Create custom Star Battle puzzles by drawing region boundaries
